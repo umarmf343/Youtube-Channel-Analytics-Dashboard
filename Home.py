@@ -93,14 +93,14 @@ def display_video_list(video_data, start_index, end_index, search_query=None):
 ########################################################################################################################
 #                                       MAIN PAGE CONFIGURATION
 ########################################################################################################################
-st.set_page_config(page_title="Youtube Channel Analytics Dashboard",
+st.set_page_config(page_title="VidIStream Dashboard",
                    page_icon="📊",
                    layout="wide")
 
 ########################################################################################################################
 #                                       SIDE BAR CONFIGURATION
 ########################################################################################################################
-st.title("YouTube Analytics Dashboard")
+st.title("VidIStream Dashboard")
 
 # Sidebar
 st.sidebar.title("Settings")
@@ -118,8 +118,8 @@ st.session_state.CHANNEL_ID = st.sidebar.text_input("Enter the YouTube Channel I
 if not st.session_state.API_KEY or not st.session_state.CHANNEL_ID:
     st.warning("Please enter your API Key and Channel ID.")
     # Display the GitHub link for the user manual
-    user_manual_link = "https://github.com/zainmz/Youtube-Channel-Analytics-Dashboard"
-    st.markdown(f"If you need help, please refer to the the GitHub Repository for the [User Manual]({user_manual_link}).")
+    user_manual_link = "https://github.com/zainmz/VidIStream/blob/main/User%20Manual.pdf"
+    st.markdown(f"If you need help, please refer to the GitHub repository for the [User Manual]({user_manual_link}).")
     st.stop()
 
 # Data Refresh Button
