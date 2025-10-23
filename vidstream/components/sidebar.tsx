@@ -11,11 +11,15 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "home", label: "Dashboard", icon: "📊" },
+  { id: "channel", label: "Channel Center", icon: "🛰️" },
   { id: "keywords", label: "Keyword Tools", icon: "🔍" },
+  { id: "ai-seo", label: "AI SEO Studio", icon: "🤖" },
+  { id: "shorts", label: "Shorts Studio", icon: "🎬" },
   { id: "analytics", label: "Analytics", icon: "📈" },
   { id: "competitors", label: "Competitors", icon: "🎯" },
   { id: "optimization", label: "Optimization", icon: "✨" },
   { id: "trending", label: "Trending", icon: "🔥" },
+  { id: "automation", label: "Automation Hub", icon: "⚙️" },
   { id: "export", label: "Export", icon: "📥" },
 ]
 

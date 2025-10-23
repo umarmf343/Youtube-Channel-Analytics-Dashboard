@@ -11,13 +11,28 @@ import CompetitorTracker from "@/components/competitor-tracker"
 import VideoOptimization from "@/components/video-optimization"
 import TrendingKeywordsPage from "@/components/trending-keywords-page"
 import ExportDataPage from "@/components/export-data-page"
+import ChannelCommandCenter from "@/components/channel-command-center"
+import AiSeoStudio from "@/components/ai-seo-studio"
+import ShortsStudio from "@/components/shorts-studio"
+import AutomationHub from "@/components/automation-hub"
 
 interface DashboardProps {
   user: User
   onLogout: () => void
 }
 
-type Page = "home" | "keywords" | "analytics" | "competitors" | "optimization" | "trending" | "export"
+type Page =
+  | "home"
+  | "keywords"
+  | "analytics"
+  | "competitors"
+  | "optimization"
+  | "trending"
+  | "export"
+  | "channel"
+  | "ai-seo"
+  | "shorts"
+  | "automation"
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentPage, setCurrentPage] = useState<Page>("home")
@@ -37,6 +52,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return <TrendingKeywordsPage />
       case "export":
         return <ExportDataPage />
+      case "channel":
+        return <ChannelCommandCenter />
+      case "ai-seo":
+        return <AiSeoStudio />
+      case "shorts":
+        return <ShortsStudio />
+      case "automation":
+        return <AutomationHub />
       default:
         return <DashboardHome user={user} />
     }

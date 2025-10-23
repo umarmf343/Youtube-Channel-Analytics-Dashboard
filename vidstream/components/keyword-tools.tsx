@@ -8,6 +8,7 @@ import InterestOverTime from "@/components/interest-over-time"
 import KeywordTemplates from "@/components/keyword-templates"
 import TranslationTool from "@/components/translation-tool"
 import RealTimeKeywordResearch from "@/components/real-time-keyword-research"
+import KeywordSuggestionLab from "@/components/keyword-suggestion-lab"
 
 export default function KeywordTools() {
   const [activeTab, setActiveTab] = useState("realtime")
@@ -15,13 +16,14 @@ export default function KeywordTools() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 bg-muted">
+        <TabsList className="grid w-full grid-cols-7 bg-muted">
           <TabsTrigger value="realtime">Real-Time</TabsTrigger>
           <TabsTrigger value="inspector">Inspector</TabsTrigger>
           <TabsTrigger value="related">Related</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="translate">Translate</TabsTrigger>
+          <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="realtime" className="space-y-4">
@@ -46,6 +48,10 @@ export default function KeywordTools() {
 
         <TabsContent value="translate" className="space-y-4">
           <TranslationTool />
+        </TabsContent>
+
+        <TabsContent value="suggestions" className="space-y-4">
+          <KeywordSuggestionLab />
         </TabsContent>
       </Tabs>
     </div>
