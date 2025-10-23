@@ -6,13 +6,14 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 ## ✨ Core Features
 
 ### 1. Real-Time Keyword Research (NEW)
-- **YouTube API Integration**: Fetches live keyword data with search volume, competition, and trends
+- **YouTube API Integration**: Fetches live keyword data with search volume, competition, and trends via authenticated API routes
 - **Keyword Inspector**: Analyze individual keywords with detailed metrics
 - **Related Keywords**: Discover 6+ related keywords for each search term
 - **Interest Over Time**: Track 12-month keyword trends with visual charts
 - **Trending Keywords**: Browse trending keywords by category (Technology, Business, Lifestyle)
 - **Performance Prediction**: Estimate views, engagement, and CTR based on keyword metrics
 - **Keyword Score**: Advanced scoring algorithm combining volume, competition, and trend data
+- **Competitor Insights**: Surface channel-specific keyword clusters sourced from public channel data
 
 ### 2. Keyword & SEO Tools
 - **Keyword Templates**: Save and reuse keyword groups for efficiency
@@ -51,7 +52,7 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - **Optimization Engine**: AI-powered recommendations for title, description, tags, and upload time
 - **Export Data**: Download analytics in CSV or JSON format
 - **Multi-Category Support**: Technology, Business, Lifestyle categories
-- **Real-Time Data Fetching**: Simulated YouTube API with realistic data patterns
+- **Live & Resilient Data Fetching**: Secure Next.js API routes hit the YouTube Data API when `YOUTUBE_API_KEY` is configured, with intelligent fallbacks to simulated data to keep the UI responsive offline
 
 ### 7. Integrated Project Enhancements (NEW)
 - **Channel Command Center** *(Streamlit dashboard fusion)*: Channel snapshot, searchable library, Prophet-style forecasts, and tag performance explorer migrated from the Python/Streamlit tooling.
@@ -123,7 +124,7 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - **State Management**: React Context API
 - **UI Components**: shadcn/ui with Tailwind CSS
 - **Charts**: Recharts for data visualization
-- **API Simulation**: Realistic YouTube API simulation with mock data
+- **API Layer**: Next.js route handlers call the YouTube Data API and enforce secure server-side usage of `YOUTUBE_API_KEY`
 
 ### Key Technologies
 - Next.js 16 (App Router)
@@ -139,6 +140,9 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - Efficient state management
 - Optimized chart rendering
 - Responsive design for all devices
+
+### Configuration
+- **Environment Variables**: Set `YOUTUBE_API_KEY` on the server to activate live keyword metrics, competitor insights, and trending detection. Without it, VidIStream automatically serves intelligent simulated data so the UX remains uninterrupted.
 
 ## 📈 Algorithms & Scoring
 
@@ -166,13 +170,13 @@ Optimization = (Title Score × 0.25) + (Description Score × 0.25) + (Tags Score
 5. **Marketing Teams**: Export data for reporting and analysis
 
 ## 🔐 Data Privacy
-- All data is stored locally in browser localStorage
-- No external API calls (simulated for demo)
-- User data is never sent to external servers
-- Export functionality allows users to download their data
+- Keyword lookups are proxied through secure Next.js API routes; only aggregate metrics from the YouTube Data API are stored in memory and never persisted server-side.
+- When `YOUTUBE_API_KEY` is absent, VidIStream reverts to fully local, simulated responses so no outbound calls are performed.
+- User annotations and preferences remain browser-local (localStorage) to avoid accidental data leakage.
+- Export functionality allows users to download their data for safekeeping or offline analysis.
 
 ## 🚀 Future Enhancements
-- Real YouTube API integration
+- Deeper cross-platform keyword benchmarking (TikTok, Instagram)
 - Machine learning-based recommendations
 - Advanced competitor analysis
 - Custom report generation
