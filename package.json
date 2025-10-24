@@ -1,0 +1,10 @@
+{
+  "name": "youtube-channel-analytics-dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --dir vidstream dev",
+    "build": "pnpm --dir vidstream build",
+    "start": "pnpm --dir vidstream start",
+    "lint": "pnpm --dir vidstream lint"
+  }
+}
