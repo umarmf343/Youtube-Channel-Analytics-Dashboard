@@ -22,8 +22,7 @@ Youtube-Channel-Analytics-Dashboard/
 ## Getting Started
 1. **Install dependencies**
    ```bash
-   cd vidstream
-   pnpm install
+   pnpm --dir vidstream install
    ```
 2. **Configure environment variables**
    ```bash
@@ -34,6 +33,7 @@ Youtube-Channel-Analytics-Dashboard/
    ```bash
    pnpm dev
    ```
+   This convenience script proxies to `pnpm dev` inside the `vidstream` directory, so you can run it directly from the repository root (the same works for `pnpm build`, `pnpm start`, and `pnpm lint`).
 4. Open [http://localhost:3000](http://localhost:3000) to explore the complete VidIStream experience.
 
 ## Why it Matters
