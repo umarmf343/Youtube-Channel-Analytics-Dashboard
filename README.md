@@ -1,50 +1,40 @@
-# VidIStream
+# VidIStream Unified Suite
 
 ## Overview
-VidIStream provides comprehensive analytics for YouTube channels. It allows users to visualize key metrics, such as views, likes, and comments, for their YouTube videos. Additionally, the dashboard offers predictive analytics, word clouds for tags, detailed statistics for individual videos, network analysis, and community detection functionalities.
+VidIStream is now the single home for every YouTube growth workflow that previously lived across the repository. The Next.js application inside the `vidstream` directory merges the strongest capabilities of the original five projects into one cohesive interface that outperforms tools like VidIQ.
 
-## Features
+## Integrated Capabilities
+- **Channel Command Center** – Streamlit dashboards and forecasting notebooks were rebuilt as native dashboard views so you can audit channel health, surface historic insights, and monitor performance trajectories without leaving VidIStream.
+- **AI SEO Studio** – The Python-based Advanced YouTube SEO Generator now powers an interactive metadata lab that produces titles, descriptions, tags, hashtags, and projected impact with tone and hook controls.
+- **Keyword Suggestion Lab** – Legacy jQuery + PHP autocomplete tooling was reimagined with modern React components that score, deduplicate, and copy Google/YouTube keyword clusters in seconds.
+- **Shorts Studio** – Remotion short-video maker blueprints, scene planners, and render presets live alongside automation checklists to streamline short-form production.
+- **Automation Hub** – Scheduling spreadsheets and comment intelligence scripts evolved into a unified automation pipeline that coordinates community posts, reminders, and workflow toggles.
 
-### Channel Details
-- Displays the channel's title, description, total views, subscribers, and total videos.
-- Provides a direct link to the YouTube channel.
+A full breakdown of every dashboard, tool, and scoring model is available in [`vidstream/VIDSTREAM_FEATURES.md`](vidstream/VIDSTREAM_FEATURES.md).
 
-### Top Videos Graphs
-- Visualizes the top videos based on views, likes, and comments.
-- Allows users to filter the number of top videos displayed.
+## Project Structure
+```
+Youtube-Channel-Analytics-Dashboard/
+├── README.md
+└── vidstream/        # Next.js 16 application with all consolidated features
+```
 
-### Viewership Growth Over Time
-- Shows the trend of views over time.
-- Predicts viewership growth for the next 30 days using the Prophet forecasting model.
+## Getting Started
+1. **Install dependencies**
+   ```bash
+   cd vidstream
+   pnpm install
+   ```
+2. **Configure environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Add your YOUTUBE_API_KEY to enable live data fetching
+   ```
+3. **Run the development server**
+   ```bash
+   pnpm dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) to explore the complete VidIStream experience.
 
-### Word Cloud & Like-to-View Ratio
-- Generates a word cloud based on the most common tags used in the videos.
-- Displays the like-to-view ratio over time, helping users understand viewer engagement.
-
-### Network Analysis
-- Visualizes the relationships between video commenters
-
-### Community Detection
-- Uses advanced algorithms to detect communities or clusters within the network of video commenters.
-
-### Detailed Video Statistics
-- Lists the latest videos with an option to view detailed statistics for each video.
-- Provides a search functionality to filter videos by title.
-
-## Usage
-For Detailed View on features and usage, refer to the user manual [User Manual](./User%20Manual.pdf)
-1. **API Key & Channel ID**: Enter your YouTube API Key and Channel ID in the sidebar.
-2. **Data Filters**: Fine-tune the data displayed using filters such as date range and tags.
-3. **Refresh Data**: Use the "Refresh Data" button in the sidebar to fetch the latest data.
-4. **Search & Pagination**: Search for videos by title and navigate through paginated results.
-5. **Detailed Video Stats**: Click on "Check Video Statistics" for a specific video to view its detailed analytics.
-
-## Installation & Setup
-For Detailed instruction on installation and how to get Youtube Data API, refer to the user manual [User Manual](./User%20Manual.pdf)
-1. Clone the repository.
-2. Install the required Python packages using `pip install -r requirements.txt`.
-3. Run the Streamlit app using `streamlit run app.py`.
-
-## Support & Feedback
-For any queries or feedback, please raise an issue in the GitHub repository.
-
+## Why it Matters
+By consolidating analytics, SEO research, automation, and content production into a single interface, VidIStream removes the need to juggle disparate codebases or manual spreadsheets. Everything you need to plan, optimise, and launch high-performing YouTube content now lives in one coherent platform.
