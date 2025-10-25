@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 
 import { fetchTrendingKeywordData } from "@/lib/server/youtube"
-import { generateMockTrendingKeywords } from "@/lib/youtube-api"
 
 export const dynamic = "force-dynamic"
 
@@ -11,14 +10,9 @@ export async function GET(request: Request) {
 
   try {
     const keywords = await fetchTrendingKeywordData(category)
-    if (!keywords.length) {
-      throw new Error("No trending keywords returned")
-    }
-
     return NextResponse.json({ keywords })
   } catch (error) {
-    console.error("[trending-keywords] Falling back to mock data", error)
-    return NextResponse.json({ keywords: generateMockTrendingKeywords(category) })
+    console.error("[trending-keywords] Unable to fetch live data", error)
+    return NextResponse.json({ error: "Failed to fetch trending keywords" }, { status: 502 })
   }
 }
-

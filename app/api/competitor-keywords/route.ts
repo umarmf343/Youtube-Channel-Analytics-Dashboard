@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 
 import { fetchCompetitorKeywordInsights } from "@/lib/server/youtube"
-import { generateMockCompetitorKeywords } from "@/lib/youtube-api"
 
 export const dynamic = "force-dynamic"
 
@@ -17,8 +16,7 @@ export async function GET(request: Request) {
     const keywords = await fetchCompetitorKeywordInsights(channel)
     return NextResponse.json({ keywords })
   } catch (error) {
-    console.error("[competitor-keywords] Falling back to mock data", error)
-    return NextResponse.json({ keywords: generateMockCompetitorKeywords(channel) })
+    console.error("[competitor-keywords] Unable to fetch live data", error)
+    return NextResponse.json({ error: "Failed to fetch competitor keywords" }, { status: 502 })
   }
 }
-
