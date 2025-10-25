@@ -5,7 +5,7 @@ import { calculateDifficulty } from "@/lib/youtube-api"
 const API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 const API_KEY = process.env.YOUTUBE_API_KEY
 
-class MissingYouTubeApiKeyError extends Error {
+export class MissingYouTubeApiKeyError extends Error {
   constructor() {
     super("YOUTUBE_API_KEY is not configured")
     this.name = "MissingYouTubeApiKeyError"
