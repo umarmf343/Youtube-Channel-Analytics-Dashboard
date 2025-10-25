@@ -53,34 +53,6 @@ const KEYWORD_STOP_WORDS = new Set([
   "scenes",
 ])
 
-const TOPIC_POOL = [
-  "automation",
-  "growth",
-  "strategy",
-  "ai tools",
-  "case study",
-  "content plan",
-  "workflow",
-  "shorts",
-  "retention",
-  "monetization",
-  "community",
-  "branding",
-  "hooks",
-  "storytelling",
-  "analytics",
-  "optimization",
-  "productivity",
-  "engagement",
-  "distribution",
-  "live stream",
-  "podcast",
-  "ads",
-  "launch",
-  "breakdown",
-  "experiment",
-]
-
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -234,125 +206,6 @@ function buildMetricsFromData(
   }
 }
 
-function formatDisplayName(value: string): string {
-  const cleaned = value.replace(/^@/, "").replace(/[-_]+/g, " ")
-  const parts = cleaned.split(" ").filter(Boolean)
-  if (!parts.length) {
-    return value || "Unknown channel"
-  }
-  return parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")
-}
-
-function hashString(value: string): number {
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function generateKeywordsFromSeed(label: string, seed: number, limit: number): string[] {
-  const words = new Set<string>()
-  tokenize(label).forEach((word) => words.add(word))
-
-  for (let index = 0; words.size < limit; index += 1) {
-    const candidate = TOPIC_POOL[(seed + index * 7) % TOPIC_POOL.length]
-    words.add(candidate)
-  }
-
-  return Array.from(words).slice(0, limit)
-}
-
-function createSimulatedVideos(
-  seed: number,
-  label: string,
-  averageViews: number,
-  keywords: string[],
-): CompetitorVideoSummary[] {
-  const topics = keywords.length ? keywords : generateKeywordsFromSeed(label, seed, 3)
-  return Array.from({ length: Math.min(3, topics.length) }, (_, index) => {
-    const topic = topics[index % topics.length]
-    const variation = ((seed >> (index * 3)) % 40) - 15
-    const views = Math.max(1200, Math.round(averageViews * (1 + variation / 100)))
-    const daysAgo = 6 * (index + 1) + (seed % 5)
-    const uploadDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString()
-
-    return {
-      id: `sim-${seed}-${index}`,
-      title: `${topic.charAt(0).toUpperCase() + topic.slice(1)} ${index === 0 ? "deep dive" : index === 1 ? "strategy" : "breakdown"}`,
-      views,
-      uploadDate,
-    }
-  })
-}
-
-function simulateBaseMetrics(
-  channel: CompetitorAnalysisRequest["channel"],
-  competitorCount: number,
-): CompetitorChannelMetrics {
-  const seed = hashString(channel.channelId ?? channel.id ?? channel.channelName)
-  const averageViews = Math.max(
-    2500,
-    Math.round((channel.totalViews || channel.subscribers * 150) / Math.max(24, competitorCount * 8)),
-  )
-  const engagementRate = Math.round((3 + (seed % 35) / 10) * 10) / 10
-  const uploadFrequency = Math.max(1, Math.round((4 + (seed % 30) / 10) * 10) / 10)
-  const growthRate = Math.round((((seed % 90) - 25) / 1.5) * 10) / 10
-  const keywords = generateKeywordsFromSeed(channel.channelName, seed, 6)
-  const videos = createSimulatedVideos(seed, channel.channelName, averageViews, keywords)
-
-  return {
-    id: channel.channelId ?? channel.id ?? `sim-${seed}`,
-    name: channel.channelName,
-    sourceQuery: channel.channelName,
-    subscribers: channel.subscribers,
-    totalViews: channel.totalViews || averageViews * 140,
-    averageViews,
-    engagementRate,
-    uploadFrequency,
-    growthRate,
-    lastUpload: videos.length ? videos[0].uploadDate : null,
-    topVideos: videos,
-    topKeywords: keywords,
-  }
-}
-
-function simulateCompetitorMetrics(
-  query: string,
-  base: CompetitorChannelMetrics,
-  index: number,
-): CompetitorChannelMetrics {
-  const seed = hashString(`${query}-${index}`)
-  const subscriberScale = 0.6 + (seed % 70) / 100
-  const viewScale = 0.55 + (seed % 90) / 100
-  const averageScale = 0.65 + (seed % 80) / 100
-
-  const subscribers = Math.max(1500, Math.round(base.subscribers * subscriberScale))
-  const totalViews = Math.max(75000, Math.round(base.totalViews * viewScale))
-  const averageViews = Math.max(1800, Math.round(base.averageViews * averageScale))
-  const engagementRate = Math.max(1.5, Math.round((base.engagementRate + ((seed % 50) - 25) / 5) * 10) / 10)
-  const uploadFrequency = Math.max(1, Math.round((base.uploadFrequency + ((seed % 40) - 18) / 10) * 10) / 10)
-  const growthRate = Math.round((((seed % 100) - 35) / 1.3) * 10) / 10
-  const keywords = generateKeywordsFromSeed(query, seed, 6)
-  const videos = createSimulatedVideos(seed, query, averageViews, keywords)
-
-  return {
-    id: `sim-${seed}`,
-    name: formatDisplayName(query),
-    sourceQuery: query,
-    subscribers,
-    totalViews,
-    averageViews,
-    engagementRate,
-    uploadFrequency,
-    growthRate,
-    lastUpload: videos.length ? videos[0].uploadDate : null,
-    topVideos: videos,
-    topKeywords: keywords,
-  }
-}
-
 function computeInsights(
   base: CompetitorChannelMetrics,
   competitors: CompetitorChannelMetrics[],
@@ -432,22 +285,6 @@ function computeInsights(
   }
 }
 
-function simulateAnalysis(
-  request: CompetitorAnalysisRequest,
-  competitorQueries: string[],
-): CompetitorAnalysisResponse {
-  const base = simulateBaseMetrics(request.channel, competitorQueries.length)
-  const competitors = competitorQueries.map((query, index) => simulateCompetitorMetrics(query, base, index))
-  const insights = computeInsights(base, competitors)
-
-  return {
-    baseChannel: base,
-    competitors,
-    insights,
-    generatedAt: new Date().toISOString(),
-  }
-}
-
 export async function analyzeCompetitors(
   request: CompetitorAnalysisRequest,
 ): Promise<CompetitorAnalysisResponse> {
@@ -458,7 +295,7 @@ export async function analyzeCompetitors(
 
   const hasApiKey = Boolean(process.env.YOUTUBE_API_KEY)
   if (!hasApiKey) {
-    return simulateAnalysis(request, competitorQueries)
+    throw new Error("YOUTUBE_API_KEY must be configured to fetch competitor analysis")
   }
 
   const baseProfile: User = {
@@ -473,43 +310,37 @@ export async function analyzeCompetitors(
     thumbnail: undefined,
   }
 
+  if (!baseProfile.channelId) {
+    throw new Error("A valid channelId is required for competitor analysis")
+  }
+
   let baseMetrics: CompetitorChannelMetrics
 
-  if (!baseProfile.channelId) {
-    baseMetrics = simulateBaseMetrics(request.channel, competitorQueries.length)
-  } else {
-    try {
-      const videos = await fetchChannelVideos(baseProfile.channelId, 40)
-      baseMetrics = buildMetricsFromData(baseProfile, videos, request.channel.channelName)
-      if (!baseMetrics.topKeywords.length) {
-        baseMetrics = {
-          ...baseMetrics,
-          topKeywords: generateKeywordsFromSeed(request.channel.channelName, hashString(request.channel.channelName), 6),
-        }
-      }
-    } catch (error) {
-      console.warn("[competitor-analysis] Unable to load base channel videos", error)
-      baseMetrics = simulateBaseMetrics(request.channel, competitorQueries.length)
+  try {
+    const videos = await fetchChannelVideos(baseProfile.channelId, 40)
+    if (!videos.length) {
+      throw new Error("No videos found for the base channel")
     }
+    baseMetrics = buildMetricsFromData(baseProfile, videos, request.channel.channelName)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load base channel data"
+    throw new Error(`Failed to load base channel data: ${message}`)
   }
 
   const competitors: CompetitorChannelMetrics[] = []
 
-  for (const [index, query] of competitorQueries.entries()) {
+  for (const query of competitorQueries) {
     try {
       const profile = await fetchChannelProfile(query)
       const videos = await fetchChannelVideos(profile.channelId, 40)
-      let metrics = buildMetricsFromData(profile, videos, query)
-      if (!metrics.topKeywords.length) {
-        metrics = {
-          ...metrics,
-          topKeywords: generateKeywordsFromSeed(profile.channelName, hashString(profile.channelName + query), 6),
-        }
+      if (!videos.length) {
+        throw new Error("No videos found for the competitor channel")
       }
+      const metrics = buildMetricsFromData(profile, videos, query)
       competitors.push(metrics)
     } catch (error) {
-      console.warn(`[competitor-analysis] Falling back to simulated data for ${query}`, error)
-      competitors.push(simulateCompetitorMetrics(query, baseMetrics, index))
+      const message = error instanceof Error ? error.message : "Unable to load competitor data"
+      throw new Error(`Failed to load data for competitor "${query}": ${message}`)
     }
   }
 
