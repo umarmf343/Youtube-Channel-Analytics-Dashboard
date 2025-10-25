@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useId, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,50 +19,104 @@ import {
   predictVideoPerformance,
   type YouTubeKeywordData,
 } from "@/lib/youtube-api"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from "@/components/ui/table"
 
 export default function RealTimeKeywordResearch() {
   const [searchTerm, setSearchTerm] = useState("")
   const [keywordData, setKeywordData] = useState<YouTubeKeywordData | null>(null)
   const [relatedKeywords, setRelatedKeywords] = useState<string[]>([])
   const [trendingKeywords, setTrendingKeywords] = useState<YouTubeKeywordData[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isKeywordLoading, setIsKeywordLoading] = useState(false)
+  const [isTrendingLoading, setIsTrendingLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("technology")
   const [keywordScore, setKeywordScore] = useState(0)
   const [performance, setPerformance] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState("search")
+  const [analysisHistory, setAnalysisHistory] = useState<YouTubeKeywordData[]>([])
   const gradientId = useId()
   const searchTrendGradientId = `search-trend-${gradientId.replace(/:/g, "")}`
 
-  const handleKeywordSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!searchTerm.trim()) return
+  const combinedRelatedKeywords = useMemo(() => {
+    const apiRelated = keywordData?.relatedKeywords ?? []
+    const supplemental = relatedKeywords.filter((keyword) => !apiRelated.includes(keyword))
+    return [...apiRelated, ...supplemental]
+  }, [keywordData, relatedKeywords])
 
-    setIsLoading(true)
+  const relatedKeywordInsights = useMemo(() => {
+    if (!keywordData) return []
+
+    const baseVolume = keywordData.searchVolume
+    const baseCompetition = keywordData.competition
+
+    return combinedRelatedKeywords.slice(0, 8).map((keyword, index) => {
+      const volume = Math.max(Math.round(baseVolume * (0.82 - index * 0.08)), 1200)
+      const competition = Math.min(Math.max(Math.round(baseCompetition + index * 4 - 6), 8), 95)
+      const score = Math.max(Math.min(keywordScore - index * 5 + 10, 100), 25)
+
+      return {
+        keyword,
+        score,
+        volume,
+        competition,
+      }
+    })
+  }, [combinedRelatedKeywords, keywordData, keywordScore])
+
+  const loadKeywordDetails = async (term: string) => {
+    const normalizedTerm = term.trim()
+    if (!normalizedTerm) {
+      return
+    }
+
+    setIsKeywordLoading(true)
     setError(null)
+
     try {
-      const data = await fetchYouTubeKeywordData(searchTerm)
+      const data = await fetchYouTubeKeywordData(normalizedTerm)
       setKeywordData(data)
+      setSearchTerm(data.keyword)
 
       const score = calculateKeywordScore(data)
       setKeywordScore(score)
 
-      const perf = predictVideoPerformance(score, "medium")
+      const estimatedChannelSize = data.searchVolume > 60000 ? "large" : data.searchVolume > 25000 ? "medium" : "small"
+      const perf = predictVideoPerformance(score, estimatedChannelSize)
       setPerformance(perf)
 
-      const related = await fetchRelatedKeywords(searchTerm)
-      setRelatedKeywords(related)
+      const supplementalRelated = await fetchRelatedKeywords(normalizedTerm)
+      const mergedRelated = Array.from(
+        new Set([...(data.relatedKeywords ?? []), ...supplementalRelated.map((keyword) => keyword.trim())]),
+      ).filter(Boolean)
+      setRelatedKeywords(mergedRelated)
+
+      setAnalysisHistory((previous) => {
+        const filtered = previous.filter((item) => item.keyword.toLowerCase() !== data.keyword.toLowerCase())
+        return [data, ...filtered].slice(0, 8)
+      })
+
+      setActiveTab("analysis")
     } catch (error) {
       console.error("[v0] Error fetching keyword data:", error)
       setError(error instanceof Error ? error.message : "Unable to fetch keyword data")
       setKeywordData(null)
       setRelatedKeywords([])
+      setPerformance(null)
     } finally {
-      setIsLoading(false)
+      setIsKeywordLoading(false)
     }
   }
 
+  const handleKeywordSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const term = searchTerm.trim()
+    if (!term) return
+
+    await loadKeywordDetails(term)
+  }
+
   const handleFetchTrending = async () => {
-    setIsLoading(true)
+    setIsTrendingLoading(true)
     setError(null)
     try {
       const trending = await fetchTrendingKeywords(selectedCategory)
@@ -72,7 +126,7 @@ export default function RealTimeKeywordResearch() {
       setError(error instanceof Error ? error.message : "Unable to load trending keywords")
       setTrendingKeywords([])
     } finally {
-      setIsLoading(false)
+      setIsTrendingLoading(false)
     }
   }
 
@@ -88,6 +142,9 @@ export default function RealTimeKeywordResearch() {
     return "text-red-600 dark:text-red-400"
   }
 
+  const analyzeButtonClasses =
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full mt-4 bg-transparent"
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -101,7 +158,7 @@ export default function RealTimeKeywordResearch() {
         </div>
       )}
 
-      <Tabs defaultValue="search" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="search">Keyword Search</TabsTrigger>
           <TabsTrigger value="trending">Trending Keywords</TabsTrigger>
@@ -123,8 +180,8 @@ export default function RealTimeKeywordResearch() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="flex-1"
                 />
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                <Button type="submit" disabled={isKeywordLoading}>
+                  {isKeywordLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
                   Search
                 </Button>
               </form>
@@ -272,8 +329,11 @@ export default function RealTimeKeywordResearch() {
                       {relatedKeywords.map((keyword) => (
                         <button
                           key={keyword}
-                          onClick={() => setSearchTerm(keyword)}
+                          onClick={() => {
+                            void loadKeywordDetails(keyword)
+                          }}
                           className="w-full text-left p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-sm text-foreground"
+                          disabled={isKeywordLoading}
                         >
                           {keyword}
                         </button>
@@ -320,8 +380,8 @@ export default function RealTimeKeywordResearch() {
                   </Button>
                 ))}
               </div>
-              <Button onClick={handleFetchTrending} disabled={isLoading} className="w-full">
-                {isLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              <Button onClick={handleFetchTrending} disabled={isTrendingLoading} className="w-full">
+                {isTrendingLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
                 Fetch Trending Keywords
               </Button>
             </CardContent>
@@ -355,8 +415,11 @@ export default function RealTimeKeywordResearch() {
                     </div>
                     <Button
                       variant="outline"
-                      className="w-full mt-4 bg-transparent"
-                      onClick={() => setSearchTerm(keyword.keyword)}
+                      className={analyzeButtonClasses}
+                      onClick={() => {
+                        void loadKeywordDetails(keyword.keyword)
+                      }}
+                      disabled={isKeywordLoading}
                     >
                       Analyze
                     </Button>
@@ -369,40 +432,215 @@ export default function RealTimeKeywordResearch() {
 
         {/* Analysis Tab */}
         <TabsContent value="analysis" className="space-y-6">
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle>Keyword Analysis Guide</CardTitle>
-              <CardDescription>Understanding the metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Search Volume</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Average monthly searches for this keyword. Higher volume = more potential traffic.
-                  </p>
+          {isKeywordLoading ? (
+            <Card className="border-border/50">
+              <CardContent className="py-12">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <Spinner className="h-5 w-5" />
+                  <p>Generating real-time analysis…</p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Competition</h4>
-                  <p className="text-sm text-muted-foreground">
-                    How many creators are targeting this keyword. Lower competition = easier to rank.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Trend</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Whether the keyword is rising or falling in popularity. Higher trend = growing interest.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Keyword Score</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Overall opportunity score (0-100). Combines volume, competition, and trend data.
-                  </p>
-                </div>
+              </CardContent>
+            </Card>
+          ) : keywordData ? (
+            <>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardDescription>Search Volume</CardDescription>
+                    <CardTitle className="text-2xl">{(keywordData.searchVolume / 1000).toFixed(1)}K</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardDescription>Competition</CardDescription>
+                    <CardTitle className="text-2xl">{keywordData.competition}%</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardDescription>Trend Velocity</CardDescription>
+                    <CardTitle className="text-2xl">{keywordData.trend}%</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardDescription>Avg. CPC</CardDescription>
+                    <CardTitle className="text-2xl">${keywordData.cpc.toFixed(2)}</CardTitle>
+                  </CardHeader>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <Card className="border-border/50 lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-xl">12-Month Search Trend</CardTitle>
+                    <CardDescription>Live trendline from YouTube analytics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        searches: {
+                          label: "Monthly Searches",
+                          color: "hsl(var(--chart-1))",
+                        },
+                      }}
+                      className="h-72"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={keywordData.monthlySearches.map((searches, index) => ({
+                            month: `M${index + 1}`,
+                            searches,
+                          }))}
+                        >
+                          <defs>
+                            <linearGradient id={searchTrendGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="hsl(var(--chart-1))" />
+                              <stop offset="50%" stopColor="hsl(var(--chart-2))" />
+                              <stop offset="100%" stopColor="hsl(var(--chart-3))" />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Line
+                            type="monotone"
+                            dataKey="searches"
+                            stroke={`url(#${searchTrendGradientId})`}
+                            strokeWidth={2}
+                            dot={{
+                              r: 4,
+                              stroke: `url(#${searchTrendGradientId})`,
+                              strokeWidth: 2,
+                              fill: "var(--background)",
+                            }}
+                            activeDot={{
+                              r: 6,
+                              strokeWidth: 0,
+                              fill: `url(#${searchTrendGradientId})`,
+                            }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Optimization Insights</CardTitle>
+                    <CardDescription>Suggested next steps for {keywordData.keyword}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="rounded-lg border border-border/50 bg-muted/40 p-3">
+                      <p className="font-medium text-foreground">Thumbnail Hook</p>
+                      <p className="text-muted-foreground">
+                        Highlight the {keywordData.trend}% growth with a bold trendline graphic to boost CTR.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-border/50 bg-muted/40 p-3">
+                      <p className="font-medium text-foreground">Content Angle</p>
+                      <p className="text-muted-foreground">
+                        Position the video for creators searching for actionable tactics with mid-level competition.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-border/50 bg-muted/40 p-3">
+                      <p className="font-medium text-foreground">Call-to-Action</p>
+                      <p className="text-muted-foreground">
+                        Use card annotations at the 60 second mark to promote related videos targeting the same niche.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle>Related Keyword Opportunities</CardTitle>
+                    <CardDescription>Prioritize keywords that share the same viewer intent.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {relatedKeywordInsights.length ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Keyword</TableHead>
+                            <TableHead className="text-right">Opportunity</TableHead>
+                            <TableHead className="text-right">Est. Volume</TableHead>
+                            <TableHead className="text-right">Competition</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {relatedKeywordInsights.map((keyword) => (
+                            <TableRow key={keyword.keyword}>
+                              <TableCell className="max-w-[220px] truncate text-foreground">{keyword.keyword}</TableCell>
+                              <TableCell className="text-right font-medium">{keyword.score}</TableCell>
+                              <TableCell className="text-right">{(keyword.volume / 1000).toFixed(1)}K</TableCell>
+                              <TableCell className="text-right">{keyword.competition}%</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No related keyword insights yet.</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle>Recent Analyses</CardTitle>
+                    <CardDescription>Your latest keyword lookups are saved for quick reference.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {analysisHistory.length ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Keyword</TableHead>
+                            <TableHead className="text-right">Volume</TableHead>
+                            <TableHead className="text-right">Competition</TableHead>
+                            <TableHead className="text-right">Trend</TableHead>
+                            <TableHead className="text-right">Score</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {analysisHistory.map((entry) => (
+                            <TableRow key={entry.keyword}>
+                              <TableCell className="text-foreground">{entry.keyword}</TableCell>
+                              <TableCell className="text-right">{(entry.searchVolume / 1000).toFixed(1)}K</TableCell>
+                              <TableCell className="text-right">{entry.competition}%</TableCell>
+                              <TableCell className="text-right">{entry.trend}%</TableCell>
+                              <TableCell className="text-right">{calculateKeywordScore(entry)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                        <TableCaption>Last {analysisHistory.length} keyword analyses</TableCaption>
+                      </Table>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Search for a keyword to populate your analysis history.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : (
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle>Run a keyword analysis</CardTitle>
+                <CardDescription>
+                  Start from the search or trending tabs to populate this workspace with live metrics.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" onClick={() => setActiveTab("search")}>
+                  Go to keyword search
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
