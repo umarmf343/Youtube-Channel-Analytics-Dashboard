@@ -1,8 +1,21 @@
 import type { YouTubeKeywordData } from "@/lib/youtube-api"
-import { calculateDifficulty } from "@/lib/youtube-api"
+import {
+  calculateDifficulty,
+  generateMockCompetitorKeywords,
+  generateMockKeywordData,
+  generateMockRelatedKeywords,
+  generateMockTrendingKeywords,
+} from "@/lib/youtube-api"
 
 const API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 const API_KEY = process.env.YOUTUBE_API_KEY
+
+class MissingYouTubeApiKeyError extends Error {
+  constructor() {
+    super("YOUTUBE_API_KEY is not configured")
+    this.name = "MissingYouTubeApiKeyError"
+  }
+}
 
 const STOP_WORDS = new Set([
   "the",
@@ -60,7 +73,7 @@ type VideosListResponse = {
 
 function requireApiKey() {
   if (!API_KEY) {
-    throw new Error("YOUTUBE_API_KEY is not configured")
+    throw new MissingYouTubeApiKeyError()
   }
 }
 
@@ -92,178 +105,202 @@ async function callYouTubeApi<T>(endpoint: string, params: Record<string, string
 }
 
 export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<YouTubeKeywordData> {
-  const searchData = await callYouTubeApi<SearchListResponse>("search", {
-    part: "snippet",
-    q: keyword,
-    type: "video",
-    maxResults: 25,
-    regionCode: "US",
-    relevanceLanguage: "en",
-  })
+  try {
+    const searchData = await callYouTubeApi<SearchListResponse>("search", {
+      part: "snippet",
+      q: keyword,
+      type: "video",
+      maxResults: 25,
+      regionCode: "US",
+      relevanceLanguage: "en",
+    })
 
-  const videoIds = searchData.items
-    ?.map((item) => item.id?.videoId)
-    .filter((id): id is string => Boolean(id))
+    const videoIds = searchData.items
+      ?.map((item) => item.id?.videoId)
+      .filter((id): id is string => Boolean(id))
 
-  if (!videoIds?.length) {
-    throw new Error("No videos found for keyword")
-  }
-
-  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-    part: "statistics,snippet",
-    id: videoIds.join(","),
-  })
-
-  const stats = videoData.items ?? []
-  if (!stats.length) {
-    throw new Error("No statistics returned for keyword")
-  }
-
-  let totalViews = 0
-  let totalEngagementRate = 0
-  let recentViews = 0
-  let olderViews = 0
-  const now = new Date()
-
-  stats.forEach((item) => {
-    const views = Number(item.statistics?.viewCount ?? 0)
-    const likes = Number(item.statistics?.likeCount ?? 0)
-    const comments = Number(item.statistics?.commentCount ?? 0)
-    const engagement = views > 0 ? (likes + comments) / views : 0
-    totalViews += views
-    totalEngagementRate += engagement
-
-    const publishedAt = item.snippet?.publishedAt ? new Date(item.snippet.publishedAt) : null
-    if (publishedAt) {
-      const diffDays = (now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60 * 24)
-      if (diffDays <= 60) {
-        recentViews += views
-      } else {
-        olderViews += views
-      }
+    if (!videoIds?.length) {
+      throw new Error("No videos found for keyword")
     }
-  })
 
-  const averageViews = totalViews / stats.length
-  const averageEngagementRate = stats.length ? totalEngagementRate / stats.length : 0
-  const totalResults = searchData.pageInfo?.totalResults ?? stats.length
+    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+      part: "statistics,snippet",
+      id: videoIds.join(","),
+    })
 
-  const competitionScore = calculateCompetitionScore(totalResults, averageEngagementRate, averageViews)
-  const trendScore = calculateTrendScore(recentViews, olderViews)
-  const monthlySearches = buildMonthlySearches(stats)
+    const stats = videoData.items ?? []
+    if (!stats.length) {
+      throw new Error("No statistics returned for keyword")
+    }
 
-  const relatedKeywords = buildKeywordIdeas(stats, keyword)
-  const searchVolume = Math.round(Math.max(averageViews, recentViews / Math.max(1, stats.length)) || 0)
-  const difficulty = calculateDifficulty(competitionScore, searchVolume)
+    let totalViews = 0
+    let totalEngagementRate = 0
+    let recentViews = 0
+    let olderViews = 0
+    const now = new Date()
 
-  return {
-    keyword,
-    searchVolume,
-    competition: competitionScore,
-    trend: trendScore,
-    relatedKeywords,
-    monthlySearches,
-    difficulty,
-    cpc: calculateCpcEstimate(searchVolume, averageEngagementRate),
-    volume: searchVolume,
+    stats.forEach((item) => {
+      const views = Number(item.statistics?.viewCount ?? 0)
+      const likes = Number(item.statistics?.likeCount ?? 0)
+      const comments = Number(item.statistics?.commentCount ?? 0)
+      const engagement = views > 0 ? (likes + comments) / views : 0
+      totalViews += views
+      totalEngagementRate += engagement
+
+      const publishedAt = item.snippet?.publishedAt ? new Date(item.snippet.publishedAt) : null
+      if (publishedAt) {
+        const diffDays = (now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60 * 24)
+        if (diffDays <= 60) {
+          recentViews += views
+        } else {
+          olderViews += views
+        }
+      }
+    })
+
+    const averageViews = totalViews / stats.length
+    const averageEngagementRate = stats.length ? totalEngagementRate / stats.length : 0
+    const totalResults = searchData.pageInfo?.totalResults ?? stats.length
+
+    const competitionScore = calculateCompetitionScore(totalResults, averageEngagementRate, averageViews)
+    const trendScore = calculateTrendScore(recentViews, olderViews)
+    const monthlySearches = buildMonthlySearches(stats)
+
+    const relatedKeywords = buildKeywordIdeas(stats, keyword)
+    const searchVolume = Math.round(Math.max(averageViews, recentViews / Math.max(1, stats.length)) || 0)
+    const difficulty = calculateDifficulty(competitionScore, searchVolume)
+
+    return {
+      keyword,
+      searchVolume,
+      competition: competitionScore,
+      trend: trendScore,
+      relatedKeywords,
+      monthlySearches,
+      difficulty,
+      cpc: calculateCpcEstimate(searchVolume, averageEngagementRate),
+      volume: searchVolume,
+    }
+  } catch (error) {
+    console.warn("Falling back to simulated keyword metrics", { keyword, error })
+    return generateMockKeywordData(keyword)
   }
 }
 
 export async function fetchKeywordSuggestions(keyword: string): Promise<string[]> {
-  const searchData = await callYouTubeApi<SearchListResponse>("search", {
-    part: "snippet",
-    q: keyword,
-    type: "video",
-    maxResults: 25,
-    order: "relevance",
-    regionCode: "US",
-  })
+  try {
+    const searchData = await callYouTubeApi<SearchListResponse>("search", {
+      part: "snippet",
+      q: keyword,
+      type: "video",
+      maxResults: 25,
+      order: "relevance",
+      regionCode: "US",
+    })
 
-  const videoIds = searchData.items
-    ?.map((item) => item.id?.videoId)
-    .filter((id): id is string => Boolean(id))
+    const videoIds = searchData.items
+      ?.map((item) => item.id?.videoId)
+      .filter((id): id is string => Boolean(id))
 
-  if (!videoIds?.length) {
-    return buildFallbackSuggestions(keyword)
+    if (!videoIds?.length) {
+      throw new Error("No videos found for suggestions")
+    }
+
+    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+      part: "snippet,statistics",
+      id: videoIds.slice(0, 25).join(","),
+    })
+
+    const stats = videoData.items ?? []
+    const rankedKeywords = rankKeywords(stats, keyword)
+    if (!rankedKeywords.length) {
+      throw new Error("No ranked keywords available")
+    }
+
+    return rankedKeywords.slice(0, 10)
+  } catch (error) {
+    console.warn("Falling back to simulated keyword suggestions", { keyword, error })
+    return generateMockRelatedKeywords(keyword)
   }
-
-  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-    part: "snippet,statistics",
-    id: videoIds.slice(0, 25).join(","),
-  })
-
-  const stats = videoData.items ?? []
-  const rankedKeywords = rankKeywords(stats, keyword)
-  if (!rankedKeywords.length) {
-    return buildFallbackSuggestions(keyword)
-  }
-
-  return rankedKeywords.slice(0, 10)
 }
 
 export async function fetchTrendingKeywordData(category: string): Promise<YouTubeKeywordData[]> {
-  const categoryId = getYouTubeCategoryId(category)
+  try {
+    const categoryId = getYouTubeCategoryId(category)
 
-  const trendingVideos = await callYouTubeApi<VideosListResponse>("videos", {
-    part: "snippet,statistics",
-    chart: "mostPopular",
-    maxResults: 30,
-    regionCode: "US",
-    videoCategoryId: categoryId,
-  })
+    const trendingVideos = await callYouTubeApi<VideosListResponse>("videos", {
+      part: "snippet,statistics",
+      chart: "mostPopular",
+      maxResults: 30,
+      regionCode: "US",
+      videoCategoryId: categoryId,
+    })
 
-  const keywords = rankKeywords(trendingVideos.items ?? [], "").slice(0, 6)
-  const uniqueKeywords = Array.from(new Set(keywords))
+    const keywords = rankKeywords(trendingVideos.items ?? [], "").slice(0, 6)
+    const uniqueKeywords = Array.from(new Set(keywords))
 
-  const keywordData: YouTubeKeywordData[] = []
-  for (const term of uniqueKeywords) {
-    try {
-      const data = await fetchKeywordMetricsFromYouTube(term)
-      keywordData.push(data)
-    } catch (error) {
-      console.error("Failed to enrich trending keyword", term, error)
+    const keywordData: YouTubeKeywordData[] = []
+    for (const term of uniqueKeywords) {
+      try {
+        const data = await fetchKeywordMetricsFromYouTube(term)
+        keywordData.push(data)
+      } catch (error) {
+        console.error("Failed to enrich trending keyword", term, error)
+      }
     }
-  }
 
-  return keywordData.slice(0, 6)
+    return keywordData.slice(0, 6)
+  } catch (error) {
+    console.warn("Falling back to simulated trending keywords", { category, error })
+    return generateMockTrendingKeywords(category)
+  }
 }
 
 export async function fetchCompetitorKeywordInsights(channelName: string): Promise<string[]> {
-  const channelSearch = await callYouTubeApi<SearchListResponse>("search", {
-    part: "snippet",
-    type: "channel",
-    q: channelName,
-    maxResults: 1,
-  })
+  try {
+    const channelSearch = await callYouTubeApi<SearchListResponse>("search", {
+      part: "snippet",
+      type: "channel",
+      q: channelName,
+      maxResults: 1,
+    })
 
-  const channelId = channelSearch.items?.[0]?.snippet?.channelId
-  if (!channelId) {
-    return buildFallbackSuggestions(channelName)
+    const channelId = channelSearch.items?.[0]?.snippet?.channelId
+    if (!channelId) {
+      throw new Error("Channel not found")
+    }
+
+    const channelVideos = await callYouTubeApi<SearchListResponse>("search", {
+      part: "snippet",
+      channelId,
+      maxResults: 25,
+      order: "viewCount",
+      type: "video",
+    })
+
+    const videoIds = channelVideos.items
+      ?.map((item) => item.id?.videoId)
+      .filter((id): id is string => Boolean(id))
+
+    if (!videoIds?.length) {
+      throw new Error("No channel videos found")
+    }
+
+    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+      part: "snippet,statistics",
+      id: videoIds.join(","),
+    })
+
+    const ranked = rankKeywords(videoData.items ?? [], channelName)
+    if (!ranked.length) {
+      throw new Error("No competitor keywords ranked")
+    }
+
+    return ranked.slice(0, 12)
+  } catch (error) {
+    console.warn("Falling back to simulated competitor keywords", { channelName, error })
+    return generateMockCompetitorKeywords(channelName)
   }
-
-  const channelVideos = await callYouTubeApi<SearchListResponse>("search", {
-    part: "snippet",
-    channelId,
-    maxResults: 25,
-    order: "viewCount",
-    type: "video",
-  })
-
-  const videoIds = channelVideos.items
-    ?.map((item) => item.id?.videoId)
-    .filter((id): id is string => Boolean(id))
-
-  if (!videoIds?.length) {
-    return buildFallbackSuggestions(channelName)
-  }
-
-  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-    part: "snippet,statistics",
-    id: videoIds.join(","),
-  })
-
-  const ranked = rankKeywords(videoData.items ?? [], channelName)
-  return ranked.slice(0, 12)
 }
 
 function calculateCompetitionScore(totalResults: number, engagementRate: number, averageViews: number): number {
@@ -387,17 +424,6 @@ function extractKeywordPhrases(text: string): string[] {
   return Array.from(phrases)
 }
 
-function buildFallbackSuggestions(seed: string): string[] {
-  const normalized = seed.trim() || "youtube seo"
-  return [
-    `${normalized} tutorial`,
-    `${normalized} strategy`,
-    `${normalized} ideas`,
-    `${normalized} tips`,
-    `advanced ${normalized}`,
-    `best ${normalized} 2025`,
-  ]
-}
 
 function getYouTubeCategoryId(category: string): string {
   const mapping: Record<string, string> = {
