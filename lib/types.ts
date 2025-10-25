@@ -25,6 +25,26 @@ export interface Video {
   thumbnail: string
 }
 
+export interface TrendAlert {
+  id: string
+  topic: string
+  category: string
+  velocity: "surging" | "rising" | "emerging"
+  change24h: number
+  change7d: number
+  momentumScore: number
+  impactLevel: "High" | "Medium" | "Watch"
+  opportunityWindow: string
+  summary: string
+  recommendedActions: string[]
+  relatedKeywords: string[]
+  searchVolume: number
+  competition: number
+  trendScore: number
+  projectedViews: number
+  lastUpdated: string
+}
+
 export interface CompetitorVideoSummary {
   id: string
   title: string

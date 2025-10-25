@@ -1,6 +1,7 @@
 import type {
   CompetitorAnalysisRequest,
   CompetitorAnalysisResponse,
+  TrendAlert,
   User,
   Video,
 } from "@/lib/types"
@@ -25,6 +26,7 @@ const API_ENDPOINTS = {
   channelProfile: "/api/channel-profile",
   channelVideos: "/api/channel-videos",
   competitorAnalysis: "/api/competitor-analysis",
+  trendAlerts: "/api/trend-alerts",
 } as const
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -88,6 +90,17 @@ export async function fetchTrendingKeywords(category: string): Promise<YouTubeKe
 
   const payload = await handleResponse<{ keywords: YouTubeKeywordData[] }>(response)
   return payload.keywords
+}
+
+export async function fetchTrendAlerts(category: string): Promise<TrendAlert[]> {
+  const response = await fetch(`${API_ENDPOINTS.trendAlerts}?category=${encodeURIComponent(category)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  })
+
+  const payload = await handleResponse<{ alerts: TrendAlert[] }>(response)
+  return payload.alerts
 }
 
 export async function fetchCompetitorKeywords(channelName: string): Promise<string[]> {

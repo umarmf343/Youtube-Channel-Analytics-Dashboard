@@ -9,13 +9,14 @@ import KeywordTools from "@/components/keyword-tools"
 import CompetitorTracker from "@/components/competitor-tracker"
 import ChannelVideoAnalytics from "@/components/channel-video-analytics"
 import TrendingKeywordsPage from "@/components/trending-keywords-page"
+import TrendAlerts from "@/components/trend-alerts"
 
 interface DashboardProps {
   user: User
   onLogout: () => void
 }
 
-type Page = "home" | "keywords" | "competitors" | "trending" | "analytics"
+type Page = "home" | "keywords" | "competitors" | "trending" | "alerts" | "analytics"
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentPage, setCurrentPage] = useState<Page>("home")
@@ -29,6 +30,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return <CompetitorTracker />
       case "trending":
         return <TrendingKeywordsPage />
+      case "alerts":
+        return <TrendAlerts />
       case "analytics":
         return <ChannelVideoAnalytics user={user} />
       default:
