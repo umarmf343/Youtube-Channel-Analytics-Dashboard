@@ -199,6 +199,7 @@ export async function fetchChannelProfile(query: string): Promise<User> {
     q: query,
     type: "channel",
     maxResults: 1,
+    fields: "items(id/channelId,snippet(channelId,title,description,publishedAt,thumbnails/default/url))",
   })
 
   const channelId = searchData.items?.[0]?.id?.channelId
@@ -210,6 +211,7 @@ export async function fetchChannelProfile(query: string): Promise<User> {
     part: "snippet,statistics",
     id: channelId,
     maxResults: 1,
+    fields: "items(id,snippet(title,description,publishedAt,thumbnails/default/url),statistics(viewCount,subscriberCount))",
   })
 
   const channel = channelData.items?.[0]
@@ -240,6 +242,7 @@ export async function fetchChannelVideos(channelId: string, maxResults = 25): Pr
     order: "date",
     type: "video",
     maxResults,
+    fields: "items(id/videoId,snippet(publishedAt,title,description,thumbnails/default/url,thumbnails/medium/url))",
   })
 
   const videoIds = searchData.items
@@ -253,6 +256,8 @@ export async function fetchChannelVideos(channelId: string, maxResults = 25): Pr
   const videoData = await callYouTubeApi<VideosListResponse>("videos", {
     part: "snippet,statistics,contentDetails",
     id: videoIds.join(","),
+    fields:
+      "items(id,snippet(publishedAt,title,description,tags,thumbnails/default/url,thumbnails/medium/url),statistics(viewCount,likeCount,commentCount),contentDetails(duration))",
   })
 
   return (videoData.items ?? [])
@@ -386,6 +391,7 @@ export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<Y
     maxResults: 25,
     regionCode: "US",
     relevanceLanguage: "en",
+    fields: "items(id/videoId),pageInfo/totalResults",
   })
 
   const videoIds = searchData.items
@@ -399,6 +405,8 @@ export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<Y
   const videoData = await callYouTubeApi<VideosListResponse>("videos", {
     part: "statistics,snippet",
     id: videoIds.join(","),
+    fields:
+      "items(id,snippet(publishedAt,title,description,tags,thumbnails/default/url,thumbnails/medium/url),statistics(viewCount,likeCount,commentCount))",
   })
 
   const stats = videoData.items ?? []
@@ -464,6 +472,7 @@ export async function fetchKeywordSuggestions(keyword: string): Promise<string[]
     maxResults: 25,
     order: "relevance",
     regionCode: "US",
+    fields: "items(id/videoId)",
   })
 
   const videoIds = searchData.items
@@ -477,6 +486,8 @@ export async function fetchKeywordSuggestions(keyword: string): Promise<string[]
   const videoData = await callYouTubeApi<VideosListResponse>("videos", {
     part: "snippet,statistics",
     id: videoIds.slice(0, 25).join(","),
+    fields:
+      "items(id,snippet(publishedAt,title,description,tags,thumbnails/default/url,thumbnails/medium/url),statistics(viewCount,likeCount,commentCount))",
   })
 
   const stats = videoData.items ?? []
@@ -497,6 +508,8 @@ export async function fetchTrendingKeywordData(category: string): Promise<YouTub
     maxResults: 30,
     regionCode: "US",
     videoCategoryId: categoryId,
+    fields:
+      "items(id,snippet(publishedAt,title,description,tags,thumbnails/default/url,thumbnails/medium/url),statistics(viewCount,likeCount,commentCount))",
   })
 
   const keywords = rankKeywords(trendingVideos.items ?? [], "").slice(0, 6)
@@ -626,6 +639,7 @@ export async function fetchCompetitorKeywordInsights(channelName: string): Promi
     type: "channel",
     q: channelName,
     maxResults: 1,
+    fields: "items(id/channelId,snippet(channelId,title))",
   })
 
   const channelId = channelSearch.items?.[0]?.snippet?.channelId
@@ -639,6 +653,7 @@ export async function fetchCompetitorKeywordInsights(channelName: string): Promi
     maxResults: 25,
     order: "viewCount",
     type: "video",
+    fields: "items(id/videoId,snippet(publishedAt,title,description,thumbnails/default/url,thumbnails/medium/url))",
   })
 
   const videoIds = channelVideos.items
@@ -652,6 +667,8 @@ export async function fetchCompetitorKeywordInsights(channelName: string): Promi
   const videoData = await callYouTubeApi<VideosListResponse>("videos", {
     part: "snippet,statistics",
     id: videoIds.join(","),
+    fields:
+      "items(id,snippet(publishedAt,title,description,tags,thumbnails/default/url,thumbnails/medium/url),statistics(viewCount,likeCount,commentCount))",
   })
 
   const ranked = rankKeywords(videoData.items ?? [], channelName)
