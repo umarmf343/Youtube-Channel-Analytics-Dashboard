@@ -7,6 +7,7 @@ import Header from "@/components/header"
 import DashboardHome from "@/components/dashboard-home"
 import KeywordTools from "@/components/keyword-tools"
 import CompetitorTracker from "@/components/competitor-tracker"
+import ChannelVideoAnalytics from "@/components/channel-video-analytics"
 import TrendingKeywordsPage from "@/components/trending-keywords-page"
 
 interface DashboardProps {
@@ -14,7 +15,7 @@ interface DashboardProps {
   onLogout: () => void
 }
 
-type Page = "home" | "keywords" | "competitors" | "trending"
+type Page = "home" | "keywords" | "competitors" | "trending" | "analytics"
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentPage, setCurrentPage] = useState<Page>("home")
@@ -28,6 +29,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return <CompetitorTracker />
       case "trending":
         return <TrendingKeywordsPage />
+      case "analytics":
+        return <ChannelVideoAnalytics user={user} />
       default:
         return <DashboardHome user={user} />
     }
