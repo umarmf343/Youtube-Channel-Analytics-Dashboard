@@ -17,6 +17,9 @@ export async function GET(request: Request) {
     return NextResponse.json(data)
   } catch (error) {
     console.error("[keyword-data] Unable to fetch live data", error)
-    return NextResponse.json({ error: "Failed to fetch keyword data" }, { status: 502 })
+    return NextResponse.json(
+      { error: "Unable to fetch keyword metrics from YouTube" },
+      { status: 502 },
+    )
   }
 }
