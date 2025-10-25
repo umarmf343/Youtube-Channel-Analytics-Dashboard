@@ -6,6 +6,14 @@ import BulkDescriptionEditor from "@/components/bulk-description-editor"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Spinner } from "@/components/ui/spinner"
 import type { User, Video } from "@/lib/types"
 import { fetchChannelVideos } from "@/lib/youtube-api"
@@ -25,6 +33,8 @@ export default function ChannelVideoAnalytics({ user }: ChannelVideoAnalyticsPro
   const [videos, setVideos] = useState<Video[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const videosPerPage = 4
 
   useEffect(() => {
     let isMounted = true
@@ -84,6 +94,10 @@ export default function ChannelVideoAnalytics({ user }: ChannelVideoAnalyticsPro
     })
   }, [videos])
 
+  const sortedAnalytics = useMemo(() => {
+    return analytics.slice().sort((a, b) => b.viewsPerHour - a.viewsPerHour)
+  }, [analytics])
+
   const summary = useMemo(() => {
     if (!analytics.length) {
       return {
@@ -112,6 +126,19 @@ export default function ChannelVideoAnalytics({ user }: ChannelVideoAnalyticsPro
       totalWatchTimeHours: totals.watchTimeHours,
     }
   }, [analytics])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [sortedAnalytics.length])
+
+  const totalPages = Math.max(1, Math.ceil(sortedAnalytics.length / videosPerPage))
+  const paginatedAnalytics = useMemo(() => {
+    const startIndex = (currentPage - 1) * videosPerPage
+    return sortedAnalytics.slice(startIndex, startIndex + videosPerPage)
+  }, [currentPage, sortedAnalytics])
+  const pageNumbers = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, index) => index + 1)
+  }, [totalPages])
 
   const auditInsights = useMemo(() => {
     if (!analytics.length) {
@@ -228,10 +255,7 @@ export default function ChannelVideoAnalytics({ user }: ChannelVideoAnalyticsPro
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {analytics
-                    .slice()
-                    .sort((a, b) => b.viewsPerHour - a.viewsPerHour)
-                    .map((video) => (
+                  {paginatedAnalytics.map((video) => (
                       <TableRow key={video.id}>
                         <TableCell>
                           <div className="space-y-1">
@@ -251,6 +275,52 @@ export default function ChannelVideoAnalytics({ user }: ChannelVideoAnalyticsPro
                     ))}
                 </TableBody>
               </Table>
+              {sortedAnalytics.length > videosPerPage ? (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        aria-disabled={currentPage === 1}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          if (currentPage > 1) {
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                          }
+                        }}
+                      />
+                    </PaginationItem>
+                    {pageNumbers.map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === currentPage}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            setCurrentPage(page)
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        aria-disabled={currentPage === totalPages}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          if (currentPage < totalPages) {
+                            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                          }
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              ) : null}
             </CardContent>
           </Card>
 
