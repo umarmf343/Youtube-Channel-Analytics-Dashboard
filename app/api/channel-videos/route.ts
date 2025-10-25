@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import {
   MissingYouTubeApiKeyError,
+  YouTubeQuotaExceededError,
   fetchChannelVideos,
 } from "@/lib/server/youtube"
 
@@ -27,6 +28,15 @@ export async function GET(request: Request) {
           error: "Server is missing a YouTube API key. Add YOUTUBE_API_KEY to your environment configuration.",
         },
         { status: 500 },
+      )
+    }
+
+    if (error instanceof YouTubeQuotaExceededError) {
+      return NextResponse.json(
+        {
+          error: "YouTube API quota exceeded. Try again after the daily quota resets.",
+        },
+        { status: 429 },
       )
     }
 

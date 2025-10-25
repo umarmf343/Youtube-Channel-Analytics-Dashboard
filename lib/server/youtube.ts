@@ -363,59 +363,47 @@ export async function fetchChannelProfile(query: string): Promise<User> {
 }
 
 export async function fetchChannelVideos(channelId: string, maxResults = 25): Promise<Video[]> {
-  try {
-    const searchData = await callYouTubeApi<SearchListResponse>("search", {
-      part: "snippet",
-      channelId,
-      order: "date",
-      type: "video",
-      maxResults,
-    })
+  const searchData = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    channelId,
+    order: "date",
+    type: "video",
+    maxResults,
+  })
 
-    const videoIds = searchData.items
-      ?.map((item) => item.id?.videoId)
-      .filter((id): id is string => Boolean(id))
+  const videoIds = searchData.items
+    ?.map((item) => item.id?.videoId)
+    .filter((id): id is string => Boolean(id))
 
-    if (!videoIds?.length) {
-      return []
-    }
-
-    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-      part: "snippet,statistics,contentDetails",
-      id: videoIds.join(","),
-    })
-
-    return (videoData.items ?? [])
-      .filter((item): item is NonNullable<typeof item> => Boolean(item.id))
-      .map((item) => {
-        const snippet = item.snippet ?? {}
-        const stats = item.statistics ?? {}
-        const contentDetails = item.contentDetails ?? {}
-
-        return {
-          id: item.id as string,
-          title: snippet.title ?? "Untitled video",
-          description: snippet.description ?? "",
-          views: Number(stats.viewCount ?? 0),
-          likes: Number(stats.likeCount ?? 0),
-          comments: Number(stats.commentCount ?? 0),
-          uploadDate: snippet.publishedAt ?? new Date().toISOString(),
-          duration: parseIsoDuration(contentDetails.duration ?? "PT0S"),
-          tags: snippet.tags ?? [],
-          thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? "",
-        }
-      })
-  } catch (error) {
-    if (error instanceof YouTubeQuotaExceededError) {
-      console.warn(
-        `[youtube] Quota exceeded while fetching videos for ${channelId}. Falling back to simulated data.`,
-        error,
-      )
-      return buildSimulatedChannelVideos(channelId, maxResults)
-    }
-
-    throw error
+  if (!videoIds?.length) {
+    return []
   }
+
+  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+    part: "snippet,statistics,contentDetails",
+    id: videoIds.join(","),
+  })
+
+  return (videoData.items ?? [])
+    .filter((item): item is NonNullable<typeof item> => Boolean(item.id))
+    .map((item) => {
+      const snippet = item.snippet ?? {}
+      const stats = item.statistics ?? {}
+      const contentDetails = item.contentDetails ?? {}
+
+      return {
+        id: item.id as string,
+        title: snippet.title ?? "Untitled video",
+        description: snippet.description ?? "",
+        views: Number(stats.viewCount ?? 0),
+        likes: Number(stats.likeCount ?? 0),
+        comments: Number(stats.commentCount ?? 0),
+        uploadDate: snippet.publishedAt ?? new Date().toISOString(),
+        duration: parseIsoDuration(contentDetails.duration ?? "PT0S"),
+        tags: snippet.tags ?? [],
+        thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? "",
+      }
+    })
 }
 
 export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<YouTubeKeywordData> {
@@ -852,93 +840,4 @@ function parseIsoDuration(duration: string): number {
   const minutes = Number(match[2] ?? 0)
   const seconds = Number(match[3] ?? 0)
   return hours * 3600 + minutes * 60 + seconds
-}
-
-const FALLBACK_VIDEO_TOPICS = [
-  "ai workflow automation",
-  "creator monetization systems",
-  "longform storytelling tips",
-  "youtube analytics breakdown",
-  "community growth playbook",
-  "viral shorts experimentation",
-  "production gear upgrades",
-  "audience retention tactics",
-  "thumbnail optimization",
-  "evergreen content ideas",
-  "niche positioning strategies",
-  "scriptwriting frameworks",
-]
-
-function hashString(value: string): number {
-  let hash = 0
-  for (let index = 0; index < value.length; index++) {
-    hash = (hash << 5) - hash + value.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash) + 1
-}
-
-function createSeededRandom(seed: number): () => number {
-  let value = seed % 2147483647
-  if (value <= 0) {
-    value += 2147483646
-  }
-
-  return () => {
-    value = (value * 16807) % 2147483647
-    return (value - 1) / 2147483646
-  }
-}
-
-function toTitleCase(value: string): string {
-  return value
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
-}
-
-function buildSimulatedChannelVideos(channelId: string, maxResults: number): Video[] {
-  const seed = hashString(channelId)
-  const random = createSeededRandom(seed)
-  const label = channelId.startsWith("UC") ? `Creator ${channelId.slice(-4).toUpperCase()}` : channelId
-  const topicCount = Math.min(Math.max(6, maxResults), FALLBACK_VIDEO_TOPICS.length)
-  const shuffledTopics = [...FALLBACK_VIDEO_TOPICS]
-  for (let index = shuffledTopics.length - 1; index > 0; index--) {
-    const swapIndex = Math.floor(random() * (index + 1))
-    ;[shuffledTopics[index], shuffledTopics[swapIndex]] = [shuffledTopics[swapIndex], shuffledTopics[index]]
-  }
-  const topics = shuffledTopics.slice(0, topicCount)
-
-  const baseViews = 4500 + Math.round(random() * 12000)
-  const baseDuration = 420 + Math.round(random() * 900)
-
-  return Array.from({ length: topicCount }, (_, index) => {
-    const topic = topics[index % topics.length]
-    const variation = 0.75 + random() * 0.9
-    const views = Math.max(1500, Math.round(baseViews * variation))
-    const likes = Math.max(90, Math.round(views * (0.045 + random() * 0.02)))
-    const comments = Math.max(12, Math.round(views * (0.008 + random() * 0.01)))
-    const duration = Math.max(240, Math.round(baseDuration * (0.6 + random() * 0.9)))
-    const daysAgo = Math.round(index * 3 + random() * 4)
-    const uploadDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString()
-    const titleTopic = toTitleCase(topic)
-    const titleSuffix = index === 0 ? "Deep Dive" : index === 1 ? "Strategy" : index % 2 === 0 ? "Blueprint" : "Breakdown"
-
-    return {
-      id: `sim-${seed}-${index}`,
-      title: `${titleTopic} ${titleSuffix}`,
-      description: `Simulated performance insights for ${label}. Explore how ${titleTopic} is resonating with audiences and plan your next upload with confidence.`,
-      views,
-      likes,
-      comments,
-      uploadDate,
-      duration,
-      tags: titleTopic
-        .toLowerCase()
-        .split(" ")
-        .filter(Boolean),
-      thumbnail: `https://placehold.co/320x180?text=${encodeURIComponent(titleTopic)}`,
-    }
-  })
 }
