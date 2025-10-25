@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,8 @@ export default function RealTimeKeywordResearch() {
   const [keywordScore, setKeywordScore] = useState(0)
   const [performance, setPerformance] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const gradientId = useId()
+  const searchTrendGradientId = `search-trend-${gradientId.replace(/:/g, "")}`
 
   const handleKeywordSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -180,11 +182,40 @@ export default function RealTimeKeywordResearch() {
                               searches,
                             }))}
                           >
+                            <defs>
+                              <linearGradient
+                                id={searchTrendGradientId}
+                                x1="0%"
+                                y1="0%"
+                                x2="100%"
+                                y2="0%"
+                              >
+                                <stop offset="0%" stopColor="hsl(var(--chart-1))" />
+                                <stop offset="50%" stopColor="hsl(var(--chart-2))" />
+                                <stop offset="100%" stopColor="hsl(var(--chart-3))" />
+                              </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
                             <ChartTooltip content={<ChartTooltipContent />} />
-                            <Line type="monotone" dataKey="searches" stroke="var(--color-searches)" strokeWidth={2} />
+                            <Line
+                              type="monotone"
+                              dataKey="searches"
+                              stroke={`url(#${searchTrendGradientId})`}
+                              strokeWidth={2}
+                              dot={{
+                                r: 4,
+                                stroke: `url(#${searchTrendGradientId})`,
+                                strokeWidth: 2,
+                                fill: "var(--background)",
+                              }}
+                              activeDot={{
+                                r: 6,
+                                strokeWidth: 0,
+                                fill: `url(#${searchTrendGradientId})`,
+                              }}
+                            />
                           </LineChart>
                         </ResponsiveContainer>
                       </ChartContainer>
