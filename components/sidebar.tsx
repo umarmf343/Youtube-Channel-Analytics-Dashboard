@@ -11,16 +11,9 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "home", label: "Dashboard", icon: "📊" },
-  { id: "channel", label: "Channel Center", icon: "🛰️" },
-  { id: "keywords", label: "Keyword Tools", icon: "🔍" },
-  { id: "ai-seo", label: "AI SEO Studio", icon: "🤖" },
-  { id: "shorts", label: "Shorts Studio", icon: "🎬" },
-  { id: "analytics", label: "Analytics", icon: "📈" },
+  { id: "keywords", label: "Keyword Research", icon: "🔍" },
   { id: "competitors", label: "Competitors", icon: "🎯" },
-  { id: "optimization", label: "Optimization", icon: "✨" },
   { id: "trending", label: "Trending", icon: "🔥" },
-  { id: "automation", label: "Automation Hub", icon: "⚙️" },
-  { id: "export", label: "Export", icon: "📥" },
 ]
 
 export default function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
@@ -31,7 +24,6 @@ export default function Sidebar({ currentPage, onPageChange, isOpen }: SidebarPr
         isOpen ? "w-64" : "w-20",
       )}
     >
-      {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
@@ -41,7 +33,6 @@ export default function Sidebar({ currentPage, onPageChange, isOpen }: SidebarPr
         </div>
       </div>
 
-      {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <Button
@@ -61,9 +52,10 @@ export default function Sidebar({ currentPage, onPageChange, isOpen }: SidebarPr
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="text-xs text-sidebar-foreground/60 text-center">{isOpen && <p>VidIStream Pro</p>}</div>
+        <div className="text-xs text-sidebar-foreground/60 text-center">
+          {isOpen && <p>Live YouTube data</p>}
+        </div>
       </div>
     </aside>
   )
