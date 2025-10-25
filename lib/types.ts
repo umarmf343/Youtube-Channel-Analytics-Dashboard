@@ -24,3 +24,43 @@ export interface Video {
   tags: string[]
   thumbnail: string
 }
+
+export interface CompetitorVideoSummary {
+  id: string
+  title: string
+  views: number
+  uploadDate: string
+}
+
+export interface CompetitorChannelMetrics {
+  id: string
+  name: string
+  sourceQuery: string
+  subscribers: number
+  totalViews: number
+  averageViews: number
+  engagementRate: number
+  uploadFrequency: number
+  growthRate: number
+  lastUpload: string | null
+  topVideos: CompetitorVideoSummary[]
+  topKeywords: string[]
+}
+
+export interface CompetitorInsights {
+  contentGaps: string[]
+  trendingTopics: string[]
+  actionItems: string[]
+}
+
+export interface CompetitorAnalysisRequest {
+  channel: Pick<User, "channelId" | "channelName" | "subscribers" | "totalViews"> & { id?: string }
+  competitors: string[]
+}
+
+export interface CompetitorAnalysisResponse {
+  baseChannel: CompetitorChannelMetrics
+  competitors: CompetitorChannelMetrics[]
+  insights: CompetitorInsights
+  generatedAt: string
+}
