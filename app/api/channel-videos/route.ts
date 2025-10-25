@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 
-import { fetchChannelVideos } from "@/lib/server/youtube"
+import {
+  MissingYouTubeApiKeyError,
+  fetchChannelVideos,
+} from "@/lib/server/youtube"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +20,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ videos })
   } catch (error) {
     console.error("[channel-videos] Unable to fetch live data", error)
-    return NextResponse.json({ error: "Failed to load channel videos" }, { status: 502 })
+
+    if (error instanceof MissingYouTubeApiKeyError) {
+      return NextResponse.json(
+        {
+          error: "Server is missing a YouTube API key. Add YOUTUBE_API_KEY to your environment configuration.",
+        },
+        { status: 500 },
+      )
+    }
+
+    const message = error instanceof Error ? error.message : "Failed to load channel videos"
+
+    return NextResponse.json({ error: message }, { status: 502 })
   }
 }
