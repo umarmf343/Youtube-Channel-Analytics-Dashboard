@@ -15,6 +15,7 @@ const menuItems = [
   { id: "competitors", label: "Competitors", icon: "🎯" },
   { id: "analytics", label: "Channel Analytics", icon: "📈" },
   { id: "trending", label: "Trending", icon: "🔥" },
+  { id: "alerts", label: "Trend Alerts", icon: "🚨" },
 ]
 
 export default function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
