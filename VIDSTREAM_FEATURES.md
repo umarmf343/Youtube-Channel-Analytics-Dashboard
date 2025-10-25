@@ -41,6 +41,7 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - **Video Manager**: Bulk edit titles, descriptions, and tags
 - **Video Tags Copy**: Copy tags from high-performing videos
 - **Comment Templates**: Save and reuse responses to common comments
+- **Bulk Description Editor (NEW)**: Apply templated description updates to multiple videos at once with chapters, resources, and hashtag automation
 - **Thumbnail Preview**: Preview thumbnails across different devices
 - **Best Time to Post Scheduler**: AI-powered upload time recommendations
 - **Controversial Keywords Checker**: Identify keywords that trigger demonetization
