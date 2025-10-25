@@ -106,6 +106,28 @@ type ChannelsListResponse = {
       viewCount?: string
       subscriberCount?: string
     }
+    contentDetails?: {
+      relatedPlaylists?: {
+        uploads?: string
+      }
+    }
+  }>
+}
+
+type PlaylistItemsListResponse = {
+  items: Array<{
+    contentDetails?: {
+      videoId?: string
+    }
+    snippet?: {
+      publishedAt?: string
+      title?: string
+      description?: string
+      thumbnails?: {
+        default?: { url?: string }
+        medium?: { url?: string }
+      }
+    }
   }>
 }
 
@@ -236,17 +258,31 @@ export async function fetchChannelProfile(query: string): Promise<User> {
 }
 
 export async function fetchChannelVideos(channelId: string, maxResults = 25): Promise<Video[]> {
-  const searchData = await callYouTubeApi<SearchListResponse>("search", {
-    part: "snippet",
-    channelId,
-    order: "date",
-    type: "video",
-    maxResults,
-    fields: "items(id/videoId,snippet(publishedAt,title,description,thumbnails/default/url,thumbnails/medium/url))",
+  const safeMaxResults = Math.min(Math.max(maxResults, 1), 50)
+
+  const channelData = await callYouTubeApi<ChannelsListResponse>("channels", {
+    part: "contentDetails",
+    id: channelId,
+    maxResults: 1,
+    fields: "items(contentDetails/relatedPlaylists/uploads)",
   })
 
-  const videoIds = searchData.items
-    ?.map((item) => item.id?.videoId)
+  const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
+
+  if (!uploadsPlaylistId) {
+    throw new Error("Unable to determine channel uploads playlist")
+  }
+
+  const playlistItems = await callYouTubeApi<PlaylistItemsListResponse>("playlistItems", {
+    part: "snippet,contentDetails",
+    playlistId: uploadsPlaylistId,
+    maxResults: safeMaxResults,
+    fields:
+      "items(contentDetails/videoId,snippet(publishedAt,title,description,thumbnails/default/url,thumbnails/medium/url))",
+  })
+
+  const videoIds = playlistItems.items
+    ?.map((item) => item.contentDetails?.videoId)
     .filter((id): id is string => Boolean(id))
 
   if (!videoIds?.length) {
