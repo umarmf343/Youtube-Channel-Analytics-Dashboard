@@ -585,7 +585,22 @@ type ChannelsListResponse = {
       viewCount?: string
       subscriberCount?: string
     }
+    contentDetails?: {
+      relatedPlaylists?: {
+        uploads?: string
+      }
+    }
   }>
+}
+
+type PlaylistItemsListResponse = {
+  items?: Array<{
+    contentDetails?: {
+      videoId?: string
+      videoPublishedAt?: string
+    }
+  }>
+  nextPageToken?: string
 }
 
 function requireApiKey() {
@@ -713,25 +728,49 @@ export async function fetchChannelProfile(query: string): Promise<User> {
 }
 
 export async function fetchChannelVideos(channelId: string, maxResults = 25): Promise<Video[]> {
-  const searchData = await callYouTubeApi<SearchListResponse>("search", {
-    part: "snippet",
-    channelId,
-    order: "date",
-    type: "video",
-    maxResults,
+  const channelData = await callYouTubeApi<ChannelsListResponse>("channels", {
+    part: "contentDetails",
+    id: channelId,
+    maxResults: 1,
   })
 
-  const videoIds = searchData.items
-    ?.map((item) => item.id?.videoId)
-    .filter((id): id is string => Boolean(id))
+  const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
+  if (!uploadsPlaylistId) {
+    return []
+  }
 
-  if (!videoIds?.length) {
+  const videoIds: string[] = []
+  let pageToken: string | undefined
+
+  while (videoIds.length < maxResults) {
+    const remaining = Math.min(50, maxResults - videoIds.length)
+    const playlistData = await callYouTubeApi<PlaylistItemsListResponse>("playlistItems", {
+      part: "contentDetails",
+      playlistId: uploadsPlaylistId,
+      maxResults: remaining,
+      pageToken,
+    })
+
+    const batchIds = (playlistData.items ?? [])
+      .map((item) => item.contentDetails?.videoId)
+      .filter((id): id is string => Boolean(id))
+
+    videoIds.push(...batchIds)
+
+    if (!playlistData.nextPageToken || videoIds.length >= maxResults) {
+      break
+    }
+
+    pageToken = playlistData.nextPageToken
+  }
+
+  if (!videoIds.length) {
     return []
   }
 
   const videoData = await callYouTubeApi<VideosListResponse>("videos", {
     part: "snippet,statistics,contentDetails",
-    id: videoIds.join(","),
+    id: videoIds.slice(0, maxResults).join(","),
   })
 
   return (videoData.items ?? [])
