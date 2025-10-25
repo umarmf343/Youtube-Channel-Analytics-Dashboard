@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import type { User, Video } from "@/lib/types"
 import { fetchChannelVideos } from "@/lib/youtube-api"
 import { Spinner } from "@/components/ui/spinner"
 import RealTimeStats from "@/components/real-time-stats"
+import { generateDailyVideoIdeas } from "@/lib/daily-ideas"
 
 interface DashboardHomeProps {
   user: User
@@ -76,6 +78,8 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
     }
   }, [videos])
 
+  const dailyIdeas = useMemo(() => generateDailyVideoIdeas(user, videos), [user, videos])
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -116,6 +120,86 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
       </div>
 
       <RealTimeStats />
+
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle>AI Daily Video Ideas</CardTitle>
+          <CardDescription>Personalized prompts based on audience momentum and engagement.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Spinner className="h-4 w-4" /> Generating ideas…
+            </div>
+          ) : dailyIdeas.length === 0 ? (
+            <p className="text-muted-foreground">Not enough signals yet—upload a video to unlock daily ideas.</p>
+          ) : (
+            <div className="space-y-4">
+              {error ? (
+                <p className="text-xs text-muted-foreground">
+                  Live channel data is unavailable right now—serving fresh suggestions from recent performance.
+                </p>
+              ) : null}
+              {dailyIdeas.map((idea) => {
+                const confidenceStyles =
+                  idea.confidence === "High"
+                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                    : idea.confidence === "Medium"
+                      ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                      : "bg-sky-500/10 text-sky-500 border-sky-500/30"
+
+                return (
+                  <div key={idea.id} className="space-y-3 rounded-lg border border-border/40 bg-muted/30 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={confidenceStyles}>
+                          {idea.confidence} confidence
+                        </Badge>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Score {idea.score}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Projected views {" "}
+                        <span className="font-medium text-foreground">{idea.projectedViews.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold text-foreground">{idea.title}</h3>
+                      <p className="text-sm text-muted-foreground">{idea.summary}</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
+                      <Badge variant="outline" className="text-xs font-medium uppercase tracking-wide">
+                        {idea.focusKeyword}
+                      </Badge>
+                      <span>+{idea.engagementBoost}% engagement lift</span>
+                      <span>{idea.recommendedUploadTime}</span>
+                      {idea.trendSignal ? <span>{idea.trendSignal}</span> : null}
+                    </div>
+
+                    {idea.inspiration ? (
+                      <p className="text-xs text-muted-foreground">
+                        Inspired by <span className="font-medium text-foreground">“{idea.inspiration}”</span>
+                        {typeof idea.performanceLift === "number"
+                          ? idea.performanceLift >= 0
+                            ? ` (+${idea.performanceLift}% vs avg views)`
+                            : ` (${idea.performanceLift}% vs avg views)`
+                          : null}
+                      </p>
+                    ) : null}
+
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                      {idea.supportingPoints.map((point, index) => (
+                        <li key={index}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-border/50">
         <CardHeader>
