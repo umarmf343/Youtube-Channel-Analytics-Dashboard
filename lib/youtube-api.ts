@@ -12,10 +12,27 @@ export interface YouTubeKeywordData {
   volume: number
 }
 
+export interface TrendAlert {
+  id: string
+  topic: string
+  niche: string
+  stage: "Emerging" | "Surging" | "Peaking"
+  momentumScore: number
+  velocity: number
+  last24hMentions: number
+  summary: string
+  recommendedActions: string[]
+  keywords: string[]
+  publishedGrowth: number
+  confidence: number
+  opportunityWindow: string
+}
+
 const API_ENDPOINTS = {
   keywordData: "/api/keyword-data",
   suggestions: "/api/keyword-suggestions",
   trending: "/api/trending-keywords",
+  trendAlerts: "/api/trend-alerts",
   competitor: "/api/competitor-keywords",
   channelProfile: "/api/channel-profile",
   channelVideos: "/api/channel-videos",
@@ -82,6 +99,17 @@ export async function fetchTrendingKeywords(category: string): Promise<YouTubeKe
 
   const payload = await handleResponse<{ keywords: YouTubeKeywordData[] }>(response)
   return payload.keywords
+}
+
+export async function fetchTrendAlerts(niche: string): Promise<TrendAlert[]> {
+  const response = await fetch(`${API_ENDPOINTS.trendAlerts}?niche=${encodeURIComponent(niche)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  })
+
+  const payload = await handleResponse<{ alerts: TrendAlert[] }>(response)
+  return payload.alerts
 }
 
 export async function fetchCompetitorKeywords(channelName: string): Promise<string[]> {

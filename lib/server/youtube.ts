@@ -1,5 +1,5 @@
 import type { User, Video } from "@/lib/types"
-import type { YouTubeKeywordData } from "@/lib/youtube-api"
+import type { TrendAlert, YouTubeKeywordData } from "@/lib/youtube-api"
 import { calculateDifficulty } from "@/lib/youtube-api"
 
 const API_BASE_URL = "https://www.googleapis.com/youtube/v3"
@@ -170,6 +170,267 @@ function getTrendingFallback(category: string): YouTubeKeywordData[] {
     cpc: item.cpc,
     volume: item.volume ?? item.searchVolume,
   }))
+}
+
+type TrendAlertFallback = {
+  id: string
+  topic: string
+  stage: TrendAlert["stage"]
+  momentumScore: number
+  velocity: number
+  last24hMentions: number
+  summary: string
+  recommendedActions: string[]
+  keywords: string[]
+  publishedGrowth: number
+  confidence: number
+  opportunityWindow: string
+}
+
+const TREND_ALERTS_FALLBACK: Record<string, TrendAlertFallback[]> = {
+  technology: [
+    {
+      id: "ai-companion-tools",
+      topic: "AI Companion Toolkits",
+      stage: "Surging",
+      momentumScore: 86,
+      velocity: 142,
+      last24hMentions: 880,
+      summary:
+        "YouTube creators are rapidly publishing walkthroughs and workflows around personal AI agents that automate knowledge work.",
+      recommendedActions: [
+        "Record a behind-the-scenes workflow showing how you deploy AI companions in your niche.",
+        "Bundle prompt libraries or templates as a lead magnet in the description.",
+      ],
+      keywords: ["ai agent setup", "personal ai workflow", "notion ai companion"],
+      publishedGrowth: 118,
+      confidence: 78,
+      opportunityWindow: "5-7 days before saturation",
+    },
+    {
+      id: "spatial-computing-setups",
+      topic: "Spatial Computing Desk Setups",
+      stage: "Emerging",
+      momentumScore: 73,
+      velocity: 96,
+      last24hMentions: 410,
+      summary:
+        "Interest in blending AR headsets with productivity desk setups is accelerating after recent headset OS updates.",
+      recommendedActions: [
+        "Publish a studio tour that highlights your spatial workspace configuration.",
+        "Compare the new headset OS features against traditional multi-monitor setups.",
+      ],
+      keywords: ["vision pro workflow", "spatial monitors", "ar desk setup"],
+      publishedGrowth: 84,
+      confidence: 69,
+      opportunityWindow: "Next 10 days with OS launch buzz",
+    },
+    {
+      id: "coding-ai-coaches",
+      topic: "AI Coding Coaches",
+      stage: "Peaking",
+      momentumScore: 64,
+      velocity: 78,
+      last24hMentions: 560,
+      summary:
+        "Educational creators are finding success with videos that compare AI coding copilots for rapid learning sprints.",
+      recommendedActions: [
+        "Host a 7-day coding challenge powered by your favorite AI coach.",
+        "Include resource links and discount codes for affiliate conversion.",
+      ],
+      keywords: ["ai coding mentor", "pair programming ai", "code coach comparison"],
+      publishedGrowth: 62,
+      confidence: 72,
+      opportunityWindow: "3-4 days before engagement cools",
+    },
+  ],
+  business: [
+    {
+      id: "creator-income-stacks",
+      topic: "Creator Income Stacks",
+      stage: "Surging",
+      momentumScore: 82,
+      velocity: 134,
+      last24hMentions: 640,
+      summary:
+        "Finance and solopreneur channels are dissecting multi-income stacks that combine digital products, memberships, and AI services.",
+      recommendedActions: [
+        "Publish a transparent income breakdown with tactical takeaways.",
+        "Add worksheets or calculators as gated downloads for email capture.",
+      ],
+      keywords: ["creator income report", "digital product stack", "solopreneur revenue"],
+      publishedGrowth: 102,
+      confidence: 75,
+      opportunityWindow: "1-2 weeks while viewers plan Q2 offers",
+    },
+    {
+      id: "ai-sales-playbooks",
+      topic: "AI Sales Playbooks",
+      stage: "Emerging",
+      momentumScore: 69,
+      velocity: 91,
+      last24hMentions: 360,
+      summary:
+        "B2B operators want scripts and automations that merge AI prospecting with human follow-up for hybrid funnels.",
+      recommendedActions: [
+        "Share a screen recorded walkthrough of your AI-enhanced outreach workflow.",
+        "Bundle prompts and CRM automations in the description for download.",
+      ],
+      keywords: ["ai cold outreach", "sales automation prompt", "crm agent workflow"],
+      publishedGrowth: 88,
+      confidence: 66,
+      opportunityWindow: "Next 8 days ahead of conference season",
+    },
+    {
+      id: "community-monetization-upgrades",
+      topic: "Community Monetization Upgrades",
+      stage: "Peaking",
+      momentumScore: 61,
+      velocity: 72,
+      last24hMentions: 420,
+      summary:
+        "Membership communities are releasing case studies about layering cohorts, masterminds, and AI office hours for retention.",
+      recommendedActions: [
+        "Film a teardown of your community funnel and retention strategy.",
+        "Highlight testimonials or data visualizations that prove member ROI.",
+      ],
+      keywords: ["community revenue", "membership upsell", "ai office hours"],
+      publishedGrowth: 58,
+      confidence: 71,
+      opportunityWindow: "4-5 days before saturation",
+    },
+  ],
+  lifestyle: [
+    {
+      id: "digital-sabbath-routines",
+      topic: "Digital Sabbath Routines",
+      stage: "Emerging",
+      momentumScore: 68,
+      velocity: 94,
+      last24hMentions: 510,
+      summary:
+        "Creators are packaging weekly unplug rituals that balance deep work sprints with intentional rest.",
+      recommendedActions: [
+        "Produce a vlog outlining your weekend reset routine with printable checklist.",
+        "Share journaling prompts or habit trackers as a Notion template.",
+      ],
+      keywords: ["digital detox weekend", "sabbath routine", "deep work reset"],
+      publishedGrowth: 76,
+      confidence: 64,
+      opportunityWindow: "Next 12 days as productivity goals refresh",
+    },
+    {
+      id: "hybrid-fitness-retreats",
+      topic: "Hybrid Fitness Retreats",
+      stage: "Surging",
+      momentumScore: 79,
+      velocity: 128,
+      last24hMentions: 450,
+      summary:
+        "Wellness channels highlight retreats that mix remote work, strength training, and nutrition coaching.",
+      recommendedActions: [
+        "Create a planning guide that compares retreat packages or share your itinerary.",
+        "Offer a downloadable checklist for packing and remote work readiness.",
+      ],
+      keywords: ["fitness workcation", "wellness retreat planning", "hybrid training camp"],
+      publishedGrowth: 94,
+      confidence: 70,
+      opportunityWindow: "7-9 days during booking rush",
+    },
+    {
+      id: "smart-home-reset",
+      topic: "Smart Home Reset Challenges",
+      stage: "Peaking",
+      momentumScore: 63,
+      velocity: 74,
+      last24hMentions: 380,
+      summary:
+        "Home creators host 30-day challenges to declutter, automate chores, and share progress dashboards.",
+      recommendedActions: [
+        "Launch your own reset challenge with weekly accountability downloads.",
+        "Feature before/after automations and budgeting tips for upgrades.",
+      ],
+      keywords: ["smart home detox", "automation reset", "monthly home challenge"],
+      publishedGrowth: 61,
+      confidence: 67,
+      opportunityWindow: "3-4 days before attention shifts",
+    },
+  ],
+}
+
+function getTrendAlertsFallback(niche: string): TrendAlert[] {
+  const normalized = niche.toLowerCase()
+  const fallback = TREND_ALERTS_FALLBACK[normalized] ?? TREND_ALERTS_FALLBACK.technology
+
+  return fallback.map((item) => ({
+    ...item,
+    niche: normalized,
+  }))
+}
+
+function toTitleCase(term: string): string {
+  return term
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
+function calculateMomentumScore(data: YouTubeKeywordData): number {
+  const volumeScore = Math.min((data.searchVolume / 50000) * 100, 100)
+  const competitionRelief = Math.max(0, 100 - data.competition)
+  const trend = data.trend
+
+  return Math.round(volumeScore * 0.35 + competitionRelief * 0.25 + trend * 0.4)
+}
+
+function calculateVelocityScore(data: YouTubeKeywordData): number {
+  const monthly = data.monthlySearches
+  const recent = monthly[monthly.length - 1] ?? data.searchVolume
+  const previous = monthly[monthly.length - 2] ?? Math.max(recent * 0.75, 1)
+  const delta = recent - previous
+  const growthRatio = previous > 0 ? delta / previous : 0
+
+  const base = data.trend * 1.1 + Math.max(0, growthRatio) * 80
+  return Math.max(35, Math.min(180, Math.round(base)))
+}
+
+function determineStage(data: YouTubeKeywordData): TrendAlert["stage"] {
+  if (data.trend >= 85 && data.competition <= 65) {
+    return "Surging"
+  }
+  if (data.trend >= 70 && data.competition <= 55) {
+    return "Emerging"
+  }
+  return "Peaking"
+}
+
+function determineOpportunityWindow(stage: TrendAlert["stage"]): string {
+  switch (stage) {
+    case "Emerging":
+      return "7-10 day early mover window"
+    case "Surging":
+      return "Publish within the next 3-5 days"
+    case "Peaking":
+    default:
+      return "Move fast (2-3 days) before saturation"
+  }
+}
+
+function buildRecommendedActions(topic: string, keywords: string[]): string[] {
+  const primary = keywords[0] ?? topic
+  const secondary = keywords[1] ?? primary
+
+  return [
+    `Ship a quick-turn explainer on ${topic} focusing on ${primary}.`,
+    `Pair the video with a resource bundle or template targeting ${secondary} searches.`,
+  ]
+}
+
+function buildAlertSummary(topic: string, data: YouTubeKeywordData, stage: TrendAlert["stage"], velocity: number): string {
+  const spotlight = data.relatedKeywords[0] ?? data.keyword
+  const competitionDescriptor = data.competition < 55 ? "low" : data.competition < 70 ? "moderate" : "high"
+
+  return `${topic} is ${stage.toLowerCase()} with a ${velocity}% velocity score and ${data.trend}% search momentum while competition remains ${competitionDescriptor}. Viewers are especially engaging with ${spotlight} videos.`
 }
 
 type SearchListResponse = {
@@ -494,6 +755,69 @@ export async function fetchTrendingKeywordData(category: string): Promise<YouTub
       error,
     )
     const fallback = getTrendingFallback(category)
+    if (fallback.length) {
+      return fallback
+    }
+    throw error
+  }
+}
+
+export async function fetchTrendAlertsData(niche: string): Promise<TrendAlert[]> {
+  if (!API_KEY) {
+    return getTrendAlertsFallback(niche)
+  }
+
+  try {
+    const keywordData = await fetchTrendingKeywordData(niche)
+
+    if (!keywordData.length) {
+      throw new Error("No keyword data available for trend alerts")
+    }
+
+    const alerts = keywordData.map((data) => {
+      const topic = toTitleCase(data.keyword)
+      const id = data.keyword
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "")
+      const stage = determineStage(data)
+      const momentumScore = Math.min(100, Math.max(45, calculateMomentumScore(data)))
+      const velocity = calculateVelocityScore(data)
+      const last24hMentions = Math.round(Math.max(120, data.searchVolume / 60))
+      const publishedGrowth = Math.max(
+        35,
+        Math.min(170, Math.round(data.trend + Math.max(0, (100 - data.competition) * 0.45))),
+      )
+      const confidence = Math.min(95, Math.round(60 + Math.max(0, (100 - data.competition) * 0.35)))
+      const opportunityWindow = determineOpportunityWindow(stage)
+      const recommendedActions = buildRecommendedActions(topic, data.relatedKeywords)
+      const summary = buildAlertSummary(topic, data, stage, velocity)
+
+      const keywords = data.relatedKeywords.length ? data.relatedKeywords.slice(0, 4) : [data.keyword]
+
+      return {
+        id: id || data.keyword.replace(/\s+/g, "-").toLowerCase(),
+        topic,
+        niche: niche.toLowerCase(),
+        stage,
+        momentumScore,
+        velocity,
+        last24hMentions,
+        summary,
+        recommendedActions,
+        keywords,
+        publishedGrowth,
+        confidence,
+        opportunityWindow,
+      }
+    })
+
+    const uniqueAlerts = Array.from(new Map(alerts.map((alert) => [alert.id, alert])).values())
+
+    return uniqueAlerts.slice(0, 6)
+  } catch (error) {
+    console.warn(`[youtube] Falling back to simulated trend alerts for niche "${niche}"`, error)
+    const fallback = getTrendAlertsFallback(niche)
     if (fallback.length) {
       return fallback
     }
