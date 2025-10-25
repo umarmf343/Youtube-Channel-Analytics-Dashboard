@@ -15,6 +15,7 @@ export default function TrendingKeywordsPage() {
   const [selectedCategory, setSelectedCategory] = useState("technology")
   const [isLoading, setIsLoading] = useState(false)
   const [selectedKeyword, setSelectedKeyword] = useState<YouTubeKeywordData | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const categories = ["technology", "business", "lifestyle"]
 
@@ -24,6 +25,7 @@ export default function TrendingKeywordsPage() {
 
   const loadTrendingKeywords = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const data: Record<string, YouTubeKeywordData[]> = {}
       for (const category of categories) {
@@ -35,6 +37,9 @@ export default function TrendingKeywordsPage() {
       }
     } catch (error) {
       console.error("[v0] Error loading trending keywords:", error)
+      setError(error instanceof Error ? error.message : "Unable to load trending keywords")
+      setTrendingByCategory({})
+      setSelectedKeyword(null)
     } finally {
       setIsLoading(false)
     }
@@ -54,6 +59,12 @@ export default function TrendingKeywordsPage() {
         <h1 className="text-3xl font-bold text-foreground mb-2">Trending Keywords</h1>
         <p className="text-muted-foreground">Discover what's trending across different categories</p>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <Tabs defaultValue="technology" onValueChange={setSelectedCategory} className="w-full">
         <TabsList className="grid w-full grid-cols-3">

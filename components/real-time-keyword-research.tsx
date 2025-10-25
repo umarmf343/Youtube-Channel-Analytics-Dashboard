@@ -29,12 +29,14 @@ export default function RealTimeKeywordResearch() {
   const [selectedCategory, setSelectedCategory] = useState("technology")
   const [keywordScore, setKeywordScore] = useState(0)
   const [performance, setPerformance] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleKeywordSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!searchTerm.trim()) return
 
     setIsLoading(true)
+    setError(null)
     try {
       const data = await fetchYouTubeKeywordData(searchTerm)
       setKeywordData(data)
@@ -49,6 +51,9 @@ export default function RealTimeKeywordResearch() {
       setRelatedKeywords(related)
     } catch (error) {
       console.error("[v0] Error fetching keyword data:", error)
+      setError(error instanceof Error ? error.message : "Unable to fetch keyword data")
+      setKeywordData(null)
+      setRelatedKeywords([])
     } finally {
       setIsLoading(false)
     }
@@ -56,11 +61,14 @@ export default function RealTimeKeywordResearch() {
 
   const handleFetchTrending = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const trending = await fetchTrendingKeywords(selectedCategory)
       setTrendingKeywords(trending)
     } catch (error) {
       console.error("[v0] Error fetching trending keywords:", error)
+      setError(error instanceof Error ? error.message : "Unable to load trending keywords")
+      setTrendingKeywords([])
     } finally {
       setIsLoading(false)
     }
@@ -84,6 +92,12 @@ export default function RealTimeKeywordResearch() {
         <h1 className="text-3xl font-bold text-foreground mb-2">Real-Time Keyword Research</h1>
         <p className="text-muted-foreground">Powered by YouTube API integration for live keyword data</p>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-3">

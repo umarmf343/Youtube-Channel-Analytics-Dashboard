@@ -1,11 +1,6 @@
+import type { User, Video } from "@/lib/types"
 import type { YouTubeKeywordData } from "@/lib/youtube-api"
-import {
-  calculateDifficulty,
-  generateMockCompetitorKeywords,
-  generateMockKeywordData,
-  generateMockRelatedKeywords,
-  generateMockTrendingKeywords,
-} from "@/lib/youtube-api"
+import { calculateDifficulty } from "@/lib/youtube-api"
 
 const API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 const API_KEY = process.env.YOUTUBE_API_KEY
@@ -43,12 +38,16 @@ const STOP_WORDS = new Set([
 
 type SearchListResponse = {
   items: Array<{
-    id?: { videoId?: string }
+    id?: { videoId?: string; channelId?: string }
     snippet?: {
       publishedAt?: string
       title?: string
       description?: string
       channelId?: string
+      thumbnails?: {
+        default?: { url?: string }
+        medium?: { url?: string }
+      }
     }
   }>
   pageInfo?: { totalResults?: number }
@@ -62,11 +61,36 @@ type VideosListResponse = {
       title?: string
       description?: string
       tags?: string[]
+      thumbnails?: {
+        default?: { url?: string }
+        medium?: { url?: string }
+      }
     }
     statistics?: {
       viewCount?: string
       likeCount?: string
       commentCount?: string
+    }
+    contentDetails?: {
+      duration?: string
+    }
+  }>
+}
+
+type ChannelsListResponse = {
+  items: Array<{
+    id?: string
+    snippet?: {
+      title?: string
+      description?: string
+      publishedAt?: string
+      thumbnails?: {
+        default?: { url?: string }
+      }
+    }
+    statistics?: {
+      viewCount?: string
+      subscriberCount?: string
     }
   }>
 }
@@ -104,203 +128,271 @@ async function callYouTubeApi<T>(endpoint: string, params: Record<string, string
   return (await response.json()) as T
 }
 
-export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<YouTubeKeywordData> {
-  try {
-    const searchData = await callYouTubeApi<SearchListResponse>("search", {
-      part: "snippet",
-      q: keyword,
-      type: "video",
-      maxResults: 25,
-      regionCode: "US",
-      relevanceLanguage: "en",
-    })
+export async function fetchChannelProfile(query: string): Promise<User> {
+  const searchData = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    q: query,
+    type: "channel",
+    maxResults: 1,
+  })
 
-    const videoIds = searchData.items
-      ?.map((item) => item.id?.videoId)
-      .filter((id): id is string => Boolean(id))
+  const channelId = searchData.items?.[0]?.id?.channelId
+  if (!channelId) {
+    throw new Error("Channel not found")
+  }
 
-    if (!videoIds?.length) {
-      throw new Error("No videos found for keyword")
-    }
+  const channelData = await callYouTubeApi<ChannelsListResponse>("channels", {
+    part: "snippet,statistics",
+    id: channelId,
+    maxResults: 1,
+  })
 
-    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-      part: "statistics,snippet",
-      id: videoIds.join(","),
-    })
+  const channel = channelData.items?.[0]
+  if (!channel) {
+    throw new Error("Unable to load channel details")
+  }
 
-    const stats = videoData.items ?? []
-    if (!stats.length) {
-      throw new Error("No statistics returned for keyword")
-    }
+  const snippet = channel.snippet ?? {}
+  const stats = channel.statistics ?? {}
 
-    let totalViews = 0
-    let totalEngagementRate = 0
-    let recentViews = 0
-    let olderViews = 0
-    const now = new Date()
+  return {
+    id: channelId,
+    channelId,
+    channelName: snippet.title ?? "Unknown channel",
+    name: snippet.title ?? "Unknown channel",
+    subscribers: Number(stats.subscriberCount ?? 0),
+    totalViews: Number(stats.viewCount ?? 0),
+    joinedDate: snippet.publishedAt ?? new Date().toISOString(),
+    description: snippet.description ?? "",
+    thumbnail: snippet.thumbnails?.default?.url ?? undefined,
+  }
+}
 
-    stats.forEach((item) => {
-      const views = Number(item.statistics?.viewCount ?? 0)
-      const likes = Number(item.statistics?.likeCount ?? 0)
-      const comments = Number(item.statistics?.commentCount ?? 0)
-      const engagement = views > 0 ? (likes + comments) / views : 0
-      totalViews += views
-      totalEngagementRate += engagement
+export async function fetchChannelVideos(channelId: string, maxResults = 25): Promise<Video[]> {
+  const searchData = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    channelId,
+    order: "date",
+    type: "video",
+    maxResults,
+  })
 
-      const publishedAt = item.snippet?.publishedAt ? new Date(item.snippet.publishedAt) : null
-      if (publishedAt) {
-        const diffDays = (now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60 * 24)
-        if (diffDays <= 60) {
-          recentViews += views
-        } else {
-          olderViews += views
-        }
+  const videoIds = searchData.items
+    ?.map((item) => item.id?.videoId)
+    .filter((id): id is string => Boolean(id))
+
+  if (!videoIds?.length) {
+    return []
+  }
+
+  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+    part: "snippet,statistics,contentDetails",
+    id: videoIds.join(","),
+  })
+
+  return (videoData.items ?? [])
+    .filter((item): item is NonNullable<typeof item> => Boolean(item.id))
+    .map((item) => {
+      const snippet = item.snippet ?? {}
+      const stats = item.statistics ?? {}
+      const contentDetails = item.contentDetails ?? {}
+
+      return {
+        id: item.id as string,
+        title: snippet.title ?? "Untitled video",
+        description: snippet.description ?? "",
+        views: Number(stats.viewCount ?? 0),
+        likes: Number(stats.likeCount ?? 0),
+        comments: Number(stats.commentCount ?? 0),
+        uploadDate: snippet.publishedAt ?? new Date().toISOString(),
+        duration: parseIsoDuration(contentDetails.duration ?? "PT0S"),
+        tags: snippet.tags ?? [],
+        thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? "",
       }
     })
+}
 
-    const averageViews = totalViews / stats.length
-    const averageEngagementRate = stats.length ? totalEngagementRate / stats.length : 0
-    const totalResults = searchData.pageInfo?.totalResults ?? stats.length
+export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<YouTubeKeywordData> {
+  const searchData = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    q: keyword,
+    type: "video",
+    maxResults: 25,
+    regionCode: "US",
+    relevanceLanguage: "en",
+  })
 
-    const competitionScore = calculateCompetitionScore(totalResults, averageEngagementRate, averageViews)
-    const trendScore = calculateTrendScore(recentViews, olderViews)
-    const monthlySearches = buildMonthlySearches(stats)
+  const videoIds = searchData.items
+    ?.map((item) => item.id?.videoId)
+    .filter((id): id is string => Boolean(id))
 
-    const relatedKeywords = buildKeywordIdeas(stats, keyword)
-    const searchVolume = Math.round(Math.max(averageViews, recentViews / Math.max(1, stats.length)) || 0)
-    const difficulty = calculateDifficulty(competitionScore, searchVolume)
+  if (!videoIds?.length) {
+    throw new Error("No videos found for keyword")
+  }
 
-    return {
-      keyword,
-      searchVolume,
-      competition: competitionScore,
-      trend: trendScore,
-      relatedKeywords,
-      monthlySearches,
-      difficulty,
-      cpc: calculateCpcEstimate(searchVolume, averageEngagementRate),
-      volume: searchVolume,
+  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+    part: "statistics,snippet",
+    id: videoIds.join(","),
+  })
+
+  const stats = videoData.items ?? []
+  if (!stats.length) {
+    throw new Error("No statistics returned for keyword")
+  }
+
+  let totalViews = 0
+  let totalEngagementRate = 0
+  let recentViews = 0
+  let olderViews = 0
+  const now = new Date()
+
+  stats.forEach((item) => {
+    const views = Number(item.statistics?.viewCount ?? 0)
+    const likes = Number(item.statistics?.likeCount ?? 0)
+    const comments = Number(item.statistics?.commentCount ?? 0)
+    const engagement = views > 0 ? (likes + comments) / views : 0
+    totalViews += views
+    totalEngagementRate += engagement
+
+    const publishedAt = item.snippet?.publishedAt ? new Date(item.snippet.publishedAt) : null
+    if (publishedAt) {
+      const diffDays = (now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60 * 24)
+      if (diffDays <= 60) {
+        recentViews += views
+      } else {
+        olderViews += views
+      }
     }
-  } catch (error) {
-    console.warn("Falling back to simulated keyword metrics", { keyword, error })
-    return generateMockKeywordData(keyword)
+  })
+
+  const averageViews = totalViews / stats.length
+  const averageEngagementRate = stats.length ? totalEngagementRate / stats.length : 0
+  const totalResults = searchData.pageInfo?.totalResults ?? stats.length
+
+  const competitionScore = calculateCompetitionScore(totalResults, averageEngagementRate, averageViews)
+  const trendScore = calculateTrendScore(recentViews, olderViews)
+  const monthlySearches = buildMonthlySearches(stats)
+
+  const relatedKeywords = buildKeywordIdeas(stats, keyword)
+  const searchVolume = Math.round(Math.max(averageViews, recentViews / Math.max(1, stats.length)) || 0)
+  const difficulty = calculateDifficulty(competitionScore, searchVolume)
+
+  return {
+    keyword,
+    searchVolume,
+    competition: competitionScore,
+    trend: trendScore,
+    relatedKeywords,
+    monthlySearches,
+    difficulty,
+    cpc: calculateCpcEstimate(searchVolume, averageEngagementRate),
+    volume: searchVolume,
   }
 }
 
 export async function fetchKeywordSuggestions(keyword: string): Promise<string[]> {
-  try {
-    const searchData = await callYouTubeApi<SearchListResponse>("search", {
-      part: "snippet",
-      q: keyword,
-      type: "video",
-      maxResults: 25,
-      order: "relevance",
-      regionCode: "US",
-    })
+  const searchData = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    q: keyword,
+    type: "video",
+    maxResults: 25,
+    order: "relevance",
+    regionCode: "US",
+  })
 
-    const videoIds = searchData.items
-      ?.map((item) => item.id?.videoId)
-      .filter((id): id is string => Boolean(id))
+  const videoIds = searchData.items
+    ?.map((item) => item.id?.videoId)
+    .filter((id): id is string => Boolean(id))
 
-    if (!videoIds?.length) {
-      throw new Error("No videos found for suggestions")
-    }
-
-    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-      part: "snippet,statistics",
-      id: videoIds.slice(0, 25).join(","),
-    })
-
-    const stats = videoData.items ?? []
-    const rankedKeywords = rankKeywords(stats, keyword)
-    if (!rankedKeywords.length) {
-      throw new Error("No ranked keywords available")
-    }
-
-    return rankedKeywords.slice(0, 10)
-  } catch (error) {
-    console.warn("Falling back to simulated keyword suggestions", { keyword, error })
-    return generateMockRelatedKeywords(keyword)
+  if (!videoIds?.length) {
+    throw new Error("No videos found for suggestions")
   }
+
+  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+    part: "snippet,statistics",
+    id: videoIds.slice(0, 25).join(","),
+  })
+
+  const stats = videoData.items ?? []
+  const rankedKeywords = rankKeywords(stats, keyword)
+  if (!rankedKeywords.length) {
+    throw new Error("No ranked keywords available")
+  }
+
+  return rankedKeywords.slice(0, 10)
 }
 
 export async function fetchTrendingKeywordData(category: string): Promise<YouTubeKeywordData[]> {
-  try {
-    const categoryId = getYouTubeCategoryId(category)
+  const categoryId = getYouTubeCategoryId(category)
 
-    const trendingVideos = await callYouTubeApi<VideosListResponse>("videos", {
-      part: "snippet,statistics",
-      chart: "mostPopular",
-      maxResults: 30,
-      regionCode: "US",
-      videoCategoryId: categoryId,
-    })
+  const trendingVideos = await callYouTubeApi<VideosListResponse>("videos", {
+    part: "snippet,statistics",
+    chart: "mostPopular",
+    maxResults: 30,
+    regionCode: "US",
+    videoCategoryId: categoryId,
+  })
 
-    const keywords = rankKeywords(trendingVideos.items ?? [], "").slice(0, 6)
-    const uniqueKeywords = Array.from(new Set(keywords))
+  const keywords = rankKeywords(trendingVideos.items ?? [], "").slice(0, 6)
+  const uniqueKeywords = Array.from(new Set(keywords))
 
-    const keywordData: YouTubeKeywordData[] = []
-    for (const term of uniqueKeywords) {
-      try {
-        const data = await fetchKeywordMetricsFromYouTube(term)
-        keywordData.push(data)
-      } catch (error) {
-        console.error("Failed to enrich trending keyword", term, error)
-      }
+  const keywordData: YouTubeKeywordData[] = []
+  for (const term of uniqueKeywords) {
+    try {
+      const data = await fetchKeywordMetricsFromYouTube(term)
+      keywordData.push(data)
+    } catch (error) {
+      console.error("Failed to enrich trending keyword", term, error)
     }
-
-    return keywordData.slice(0, 6)
-  } catch (error) {
-    console.warn("Falling back to simulated trending keywords", { category, error })
-    return generateMockTrendingKeywords(category)
   }
+
+  if (!keywordData.length) {
+    throw new Error("No trending keyword data available")
+  }
+
+  return keywordData.slice(0, 6)
 }
 
 export async function fetchCompetitorKeywordInsights(channelName: string): Promise<string[]> {
-  try {
-    const channelSearch = await callYouTubeApi<SearchListResponse>("search", {
-      part: "snippet",
-      type: "channel",
-      q: channelName,
-      maxResults: 1,
-    })
+  const channelSearch = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    type: "channel",
+    q: channelName,
+    maxResults: 1,
+  })
 
-    const channelId = channelSearch.items?.[0]?.snippet?.channelId
-    if (!channelId) {
-      throw new Error("Channel not found")
-    }
-
-    const channelVideos = await callYouTubeApi<SearchListResponse>("search", {
-      part: "snippet",
-      channelId,
-      maxResults: 25,
-      order: "viewCount",
-      type: "video",
-    })
-
-    const videoIds = channelVideos.items
-      ?.map((item) => item.id?.videoId)
-      .filter((id): id is string => Boolean(id))
-
-    if (!videoIds?.length) {
-      throw new Error("No channel videos found")
-    }
-
-    const videoData = await callYouTubeApi<VideosListResponse>("videos", {
-      part: "snippet,statistics",
-      id: videoIds.join(","),
-    })
-
-    const ranked = rankKeywords(videoData.items ?? [], channelName)
-    if (!ranked.length) {
-      throw new Error("No competitor keywords ranked")
-    }
-
-    return ranked.slice(0, 12)
-  } catch (error) {
-    console.warn("Falling back to simulated competitor keywords", { channelName, error })
-    return generateMockCompetitorKeywords(channelName)
+  const channelId = channelSearch.items?.[0]?.snippet?.channelId
+  if (!channelId) {
+    throw new Error("Channel not found")
   }
+
+  const channelVideos = await callYouTubeApi<SearchListResponse>("search", {
+    part: "snippet",
+    channelId,
+    maxResults: 25,
+    order: "viewCount",
+    type: "video",
+  })
+
+  const videoIds = channelVideos.items
+    ?.map((item) => item.id?.videoId)
+    .filter((id): id is string => Boolean(id))
+
+  if (!videoIds?.length) {
+    throw new Error("No channel videos found")
+  }
+
+  const videoData = await callYouTubeApi<VideosListResponse>("videos", {
+    part: "snippet,statistics",
+    id: videoIds.join(","),
+  })
+
+  const ranked = rankKeywords(videoData.items ?? [], channelName)
+  if (!ranked.length) {
+    throw new Error("No competitor keywords ranked")
+  }
+
+  return ranked.slice(0, 12)
 }
 
 function calculateCompetitionScore(totalResults: number, engagementRate: number, averageViews: number): number {
@@ -424,7 +516,6 @@ function extractKeywordPhrases(text: string): string[] {
   return Array.from(phrases)
 }
 
-
 function getYouTubeCategoryId(category: string): string {
   const mapping: Record<string, string> = {
     technology: "28",
@@ -435,3 +526,11 @@ function getYouTubeCategoryId(category: string): string {
   return mapping[category] ?? mapping.technology
 }
 
+function parseIsoDuration(duration: string): number {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!match) return 0
+  const hours = Number(match[1] ?? 0)
+  const minutes = Number(match[2] ?? 0)
+  const seconds = Number(match[3] ?? 0)
+  return hours * 3600 + minutes * 60 + seconds
+}
