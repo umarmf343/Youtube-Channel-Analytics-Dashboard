@@ -1,4 +1,9 @@
-import type { User, Video } from "@/lib/types"
+import type {
+  CompetitorAnalysisRequest,
+  CompetitorAnalysisResponse,
+  User,
+  Video,
+} from "@/lib/types"
 
 export interface YouTubeKeywordData {
   keyword: string
@@ -19,6 +24,7 @@ const API_ENDPOINTS = {
   competitor: "/api/competitor-keywords",
   channelProfile: "/api/channel-profile",
   channelVideos: "/api/channel-videos",
+  competitorAnalysis: "/api/competitor-analysis",
 } as const
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -93,6 +99,19 @@ export async function fetchCompetitorKeywords(channelName: string): Promise<stri
 
   const payload = await handleResponse<{ keywords: string[] }>(response)
   return payload.keywords
+}
+
+export async function fetchCompetitorAnalysis(
+  payload: CompetitorAnalysisRequest,
+): Promise<CompetitorAnalysisResponse> {
+  const response = await fetch(API_ENDPOINTS.competitorAnalysis, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  })
+
+  return handleResponse<CompetitorAnalysisResponse>(response)
 }
 
 export function calculateDifficulty(competition: number, volume: number): "Easy" | "Medium" | "Hard" {
