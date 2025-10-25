@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -275,13 +275,23 @@ export default function BulkDescriptionEditor({ videos, channelName }: BulkDescr
                   {videos.map((video) => {
                     const isChecked = selectedIds.includes(video.id)
                     const history = updateHistory[video.id]
+
+                    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        toggleVideo(video.id)
+                      }
+                    }
+
                     return (
-                      <button
+                      <div
                         key={video.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => toggleVideo(video.id)}
+                        onKeyDown={handleKeyDown}
                         className={cn(
-                          "w-full rounded-lg border border-border/50 bg-background p-3 text-left transition hover:border-primary/40",
+                          "w-full rounded-lg border border-border/50 bg-background p-3 text-left transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           isChecked ? "border-primary/60 shadow-sm" : "",
                         )}
                       >
@@ -310,7 +320,7 @@ export default function BulkDescriptionEditor({ videos, channelName }: BulkDescr
                             </p>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                   {!videos.length && (
