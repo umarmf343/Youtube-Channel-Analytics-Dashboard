@@ -1,6 +1,7 @@
 import type {
   CompetitorAnalysisRequest,
   CompetitorAnalysisResponse,
+  RealTimeStatsPayload,
   TrendAlert,
   User,
   Video,
@@ -27,6 +28,7 @@ const API_ENDPOINTS = {
   channelVideos: "/api/channel-videos",
   competitorAnalysis: "/api/competitor-analysis",
   trendAlerts: "/api/trend-alerts",
+  realTimeStats: "/api/real-time-stats",
 } as const
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -58,6 +60,16 @@ export async function fetchChannelVideos(channelId: string): Promise<Video[]> {
 
   const payload = await handleResponse<{ videos: Video[] }>(response)
   return payload.videos
+}
+
+export async function fetchRealTimeChannelStats(channelId: string): Promise<RealTimeStatsPayload> {
+  const response = await fetch(`${API_ENDPOINTS.realTimeStats}?channelId=${encodeURIComponent(channelId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  })
+
+  return handleResponse<RealTimeStatsPayload>(response)
 }
 
 export async function fetchYouTubeKeywordData(keyword: string): Promise<YouTubeKeywordData> {

@@ -1,4 +1,11 @@
-import type { TrendAlert, User, Video } from "@/lib/types"
+import type {
+  RealTimeStatsPayload,
+  RealTimeStatsPoint,
+  RealTimeStatsSummary,
+  TrendAlert,
+  User,
+  Video,
+} from "@/lib/types"
 import type { YouTubeKeywordData } from "@/lib/youtube-api"
 import { calculateDifficulty, calculateKeywordScore } from "@/lib/youtube-api"
 
@@ -754,6 +761,107 @@ export async function fetchChannelVideos(channelId: string, maxResults = 25): Pr
         thumbnail: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? "",
       }
     })
+}
+
+const REAL_TIME_POINT_COUNT = 12
+
+function estimateAverageViewDuration(durationSeconds: number): number {
+  const base = Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : 240
+  const lowerBound = Math.min(base, 60)
+  const estimated = base * 0.55
+  return Math.max(Math.min(estimated, base), lowerBound)
+}
+
+function buildRealTimePoint(now: Date, video: Video): RealTimeStatsPoint {
+  const publishedAt = new Date(video.uploadDate)
+  const diffInHours = Math.max((now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60), 0.25)
+  const safeDiffInHours = Number.isFinite(diffInHours) && diffInHours > 0 ? diffInHours : 1
+
+  const viewsPerHour = Math.round(video.views / safeDiffInHours)
+  const likesPerHour = Math.round(video.likes / safeDiffInHours)
+  const commentsPerHour = Math.round(video.comments / safeDiffInHours)
+
+  const averageViewDuration = estimateAverageViewDuration(video.duration)
+  const totalWatchTimeMinutes = (video.views * averageViewDuration) / 60
+  const watchTimePerHourMinutes = Math.round(totalWatchTimeMinutes / safeDiffInHours)
+
+  const durationMinutes = Math.max(video.duration / 60, 1)
+  const estimatedActiveViewers = Math.max(Math.round(viewsPerHour / durationMinutes), 0)
+
+  const labelFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" })
+
+  return {
+    timestamp: publishedAt.toISOString(),
+    label: labelFormatter.format(publishedAt),
+    views: viewsPerHour,
+    likes: likesPerHour,
+    comments: commentsPerHour,
+    watchTimeMinutes: watchTimePerHourMinutes,
+    liveViewers: estimatedActiveViewers,
+  }
+}
+
+export async function fetchRealTimeChannelStats(channelId: string): Promise<RealTimeStatsPayload> {
+  const videos = await fetchChannelVideos(channelId, REAL_TIME_POINT_COUNT)
+  const generatedAt = new Date()
+
+  if (!videos.length) {
+    return {
+      points: [],
+      summary: {
+        averageViews: 0,
+        engagementRate: 0,
+        engagementChange: 0,
+        viewsChange: 0,
+        watchTimeHours: 0,
+        totalEngagement: 0,
+        totalViews: 0,
+      },
+      generatedAt: generatedAt.toISOString(),
+    }
+  }
+
+  const recentVideos = videos.slice(0, REAL_TIME_POINT_COUNT)
+  const points = recentVideos.map((video) => buildRealTimePoint(generatedAt, video)).reverse()
+
+  const latestPoint = points[points.length - 1]
+  const previousPoint = points[points.length - 2]
+
+  const totalViews = recentVideos.reduce((total, video) => total + video.views, 0)
+  const totalEngagement = recentVideos.reduce((total, video) => total + video.likes + video.comments, 0)
+  const totalWatchTimeMinutes = recentVideos.reduce((total, video) => {
+    const averageViewDuration = estimateAverageViewDuration(video.duration)
+    return total + (video.views * averageViewDuration) / 60
+  }, 0)
+
+  const averageViews = points.length
+    ? Math.round(points.reduce((sum, point) => sum + point.views, 0) / points.length)
+    : 0
+
+  const latestEngagement = latestPoint ? latestPoint.likes + latestPoint.comments : 0
+  const previousEngagement = previousPoint ? previousPoint.likes + previousPoint.comments : 0
+
+  const summary: RealTimeStatsSummary = {
+    averageViews,
+    engagementRate: latestPoint && latestPoint.views > 0 ? (latestEngagement / latestPoint.views) * 100 : 0,
+    engagementChange:
+      previousEngagement > 0
+        ? ((latestEngagement - previousEngagement) / previousEngagement) * 100
+        : 0,
+    viewsChange:
+      previousPoint && previousPoint.views > 0
+        ? ((latestPoint.views - previousPoint.views) / previousPoint.views) * 100
+        : 0,
+    watchTimeHours: totalWatchTimeMinutes / 60,
+    totalEngagement,
+    totalViews,
+  }
+
+  return {
+    points,
+    summary,
+    generatedAt: generatedAt.toISOString(),
+  }
 }
 
 export async function fetchKeywordMetricsFromYouTube(keyword: string): Promise<YouTubeKeywordData> {

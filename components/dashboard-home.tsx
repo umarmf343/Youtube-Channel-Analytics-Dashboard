@@ -119,7 +119,7 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
         </Card>
       </div>
 
-      <RealTimeStats />
+      <RealTimeStats user={user} />
 
       <Card className="border-border/50">
         <CardHeader>
