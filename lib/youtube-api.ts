@@ -7,6 +7,8 @@ import type {
   Video,
 } from "@/lib/types"
 
+import { fetchWithCache } from "./cache"
+
 export interface YouTubeKeywordData {
   keyword: string
   searchVolume: number
@@ -41,25 +43,41 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return (await response.json()) as T
 }
 
-export async function fetchChannelProfile(query: string): Promise<User> {
-  const response = await fetch(`${API_ENDPOINTS.channelProfile}?query=${encodeURIComponent(query)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+const TEN_MINUTES = 1000 * 60 * 10
+const FIVE_MINUTES = 1000 * 60 * 5
+const TWO_MINUTES = 1000 * 60 * 2
 
-  return handleResponse<User>(response)
+export async function fetchChannelProfile(query: string): Promise<User> {
+  return fetchWithCache(
+    `channel-profile:${query}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.channelProfile}?query=${encodeURIComponent(query)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
+
+      return handleResponse<User>(response)
+    },
+    TEN_MINUTES,
+  )
 }
 
 export async function fetchChannelVideos(channelId: string): Promise<Video[]> {
-  const response = await fetch(`${API_ENDPOINTS.channelVideos}?channelId=${encodeURIComponent(channelId)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+  return fetchWithCache(
+    `channel-videos:${channelId}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.channelVideos}?channelId=${encodeURIComponent(channelId)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
 
-  const payload = await handleResponse<{ videos: Video[] }>(response)
-  return payload.videos
+      const payload = await handleResponse<{ videos: Video[] }>(response)
+      return payload.videos
+    },
+    TEN_MINUTES,
+  )
 }
 
 export async function fetchRealTimeChannelStats(channelId: string): Promise<RealTimeStatsPayload> {
@@ -73,57 +91,87 @@ export async function fetchRealTimeChannelStats(channelId: string): Promise<Real
 }
 
 export async function fetchYouTubeKeywordData(keyword: string): Promise<YouTubeKeywordData> {
-  const response = await fetch(`${API_ENDPOINTS.keywordData}?keyword=${encodeURIComponent(keyword)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+  return fetchWithCache(
+    `keyword-data:${keyword}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.keywordData}?keyword=${encodeURIComponent(keyword)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
 
-  return handleResponse<YouTubeKeywordData>(response)
+      return handleResponse<YouTubeKeywordData>(response)
+    },
+    FIVE_MINUTES,
+  )
 }
 
 export async function fetchRelatedKeywords(keyword: string): Promise<string[]> {
-  const response = await fetch(`${API_ENDPOINTS.suggestions}?keyword=${encodeURIComponent(keyword)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+  return fetchWithCache(
+    `keyword-suggestions:${keyword}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.suggestions}?keyword=${encodeURIComponent(keyword)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
 
-  const payload = await handleResponse<{ suggestions: string[] }>(response)
-  return payload.suggestions
+      const payload = await handleResponse<{ suggestions: string[] }>(response)
+      return payload.suggestions
+    },
+    TWO_MINUTES,
+  )
 }
 
 export async function fetchTrendingKeywords(category: string): Promise<YouTubeKeywordData[]> {
-  const response = await fetch(`${API_ENDPOINTS.trending}?category=${encodeURIComponent(category)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+  return fetchWithCache(
+    `trending-keywords:${category}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.trending}?category=${encodeURIComponent(category)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
 
-  const payload = await handleResponse<{ keywords: YouTubeKeywordData[] }>(response)
-  return payload.keywords
+      const payload = await handleResponse<{ keywords: YouTubeKeywordData[] }>(response)
+      return payload.keywords
+    },
+    TWO_MINUTES,
+  )
 }
 
 export async function fetchTrendAlerts(category: string): Promise<TrendAlert[]> {
-  const response = await fetch(`${API_ENDPOINTS.trendAlerts}?category=${encodeURIComponent(category)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+  return fetchWithCache(
+    `trend-alerts:${category}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.trendAlerts}?category=${encodeURIComponent(category)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
 
-  const payload = await handleResponse<{ alerts: TrendAlert[] }>(response)
-  return payload.alerts
+      const payload = await handleResponse<{ alerts: TrendAlert[] }>(response)
+      return payload.alerts
+    },
+    TWO_MINUTES,
+  )
 }
 
 export async function fetchCompetitorKeywords(channelName: string): Promise<string[]> {
-  const response = await fetch(`${API_ENDPOINTS.competitor}?channel=${encodeURIComponent(channelName)}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  })
+  return fetchWithCache(
+    `competitor-keywords:${channelName}`,
+    async () => {
+      const response = await fetch(`${API_ENDPOINTS.competitor}?channel=${encodeURIComponent(channelName)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      })
 
-  const payload = await handleResponse<{ keywords: string[] }>(response)
-  return payload.keywords
+      const payload = await handleResponse<{ keywords: string[] }>(response)
+      return payload.keywords
+    },
+    FIVE_MINUTES,
+  )
 }
 
 export async function fetchCompetitorAnalysis(
