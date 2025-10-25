@@ -295,7 +295,21 @@ export default function RealTimeKeywordResearch() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2 flex-wrap">
-                {["technology", "business", "lifestyle"].map((cat) => (
+                {[
+                  "technology",
+                  "business",
+                  "lifestyle",
+                  "finance",
+                  "health",
+                  "education",
+                  "gaming",
+                  "entertainment",
+                  "news",
+                  "sports",
+                  "travel",
+                  "food",
+                  "music",
+                ].map((cat) => (
                   <Button
                     key={cat}
                     variant={selectedCategory === cat ? "default" : "outline"}
