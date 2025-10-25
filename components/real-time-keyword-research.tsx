@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useId, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Spinner } from "@/components/ui/spinner"
+import { Separator } from "@/components/ui/separator"
+import { Progress } from "@/components/ui/progress"
+import { formatNumber } from "@/lib/utils"
 import {
   fetchYouTubeKeywordData,
   fetchRelatedKeywords,
@@ -28,10 +31,11 @@ export default function RealTimeKeywordResearch() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("technology")
   const [keywordScore, setKeywordScore] = useState(0)
-  const [performance, setPerformance] = useState<any>(null)
+  const [performance, setPerformance] = useState<ReturnType<typeof predictVideoPerformance> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const gradientId = useId()
   const searchTrendGradientId = `search-trend-${gradientId.replace(/:/g, "")}`
+  const analysisTrendGradientId = `analysis-trend-${gradientId.replace(/:/g, "")}`
 
   const handleKeywordSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,6 +91,193 @@ export default function RealTimeKeywordResearch() {
     if (score >= 70) return "text-yellow-600 dark:text-yellow-400"
     return "text-red-600 dark:text-red-400"
   }
+
+  const analysisDetails = useMemo(() => {
+    if (!keywordData) return null
+
+    const sanitizedTrend = Math.round(keywordData.trend)
+    const volumeScore = Math.min(Math.round((keywordData.searchVolume / 50000) * 100), 100)
+    const competitionScore = Math.max(100 - keywordData.competition, 0)
+    const momentumScore = Math.min(Math.max(sanitizedTrend, 0), 100)
+
+    const stage =
+      sanitizedTrend >= 70 ? "Breakout" : sanitizedTrend >= 40 ? "Rising" : sanitizedTrend >= 10 ? "Steady" : "Cooling"
+
+    const stageDescription =
+      stage === "Breakout"
+        ? "Search demand is surging. Publish while the algorithm is rewarding early coverage."
+        : stage === "Rising"
+          ? "Momentum is building. An early, authoritative video will capture the influx of searches."
+          : stage === "Steady"
+            ? "Demand is consistent. A definitive guide can secure evergreen search traffic."
+            : "Interest is softening. Refresh the angle or pair with related trends to reignite attention."
+
+    const opportunityLevel = keywordScore >= 85 ? "High priority" : keywordScore >= 70 ? "Worth pursuing" : "Supportive angle"
+
+    const lengthRange =
+      keywordScore >= 85 ? { min: 9, max: 11 } : keywordScore >= 70 ? { min: 7, max: 9 } : { min: 5, max: 7 }
+    const recommendedLengthLabel = `${lengthRange.min}-${lengthRange.max} minutes`
+
+    const cadenceAction =
+      stage === "Breakout"
+        ? "Publish within the next 48 hours while searches are spiking."
+        : stage === "Rising"
+          ? "Schedule this upload within the next 5 days to ride the upswing."
+          : stage === "Steady"
+            ? "Slot this into next week's release cadence to keep steady discovery traffic."
+            : "Monitor the trend weekly and refresh your hook when searches rebound."
+
+    const monetizationNote =
+      keywordData.cpc >= 3
+        ? "Advertisers pay a premium here—highlight sponsorships or high-value affiliate offers."
+        : keywordData.cpc >= 2
+          ? "CPMs are healthy; weave in mid-roll ads and product mentions to maximize revenue."
+          : "Treat this topic as top-of-funnel and push viewers to higher-value playlists or email capture."
+
+    const differentiationAction =
+      keywordData.competition >= 65
+        ? "Include proprietary data or a case study to stand out from look-alike tutorials."
+        : keywordData.competition >= 45
+          ? "Blend a how-to walkthrough with storytelling to edge past templated guides."
+          : "Position this as the definitive guide and dominate search placements."
+
+    const primaryPromise =
+      stage === "Breakout"
+        ? `Show how to win with ${keywordData.keyword} before everyone else catches up.`
+        : stage === "Rising"
+          ? `Give viewers a repeatable system for ${keywordData.keyword} they can deploy today.`
+          : stage === "Steady"
+            ? `Save viewers hours by packaging everything they need to know about ${keywordData.keyword}.`
+            : `Update ${keywordData.keyword} with a unique POV to revive audience interest.`
+
+    const tagCandidates = relatedKeywords.length ? relatedKeywords : keywordData.relatedKeywords
+    const fallbackTags = [
+      keywordData.keyword,
+      `${keywordData.keyword} tutorial`,
+      `${keywordData.keyword} tips`,
+      `${keywordData.keyword} strategy`,
+    ]
+    const tagSet = new Set<string>()
+    const tags: string[] = []
+    ;[...tagCandidates, ...fallbackTags].forEach((tag) => {
+      const normalized = tag.trim()
+      if (!normalized) return
+      const key = normalized.toLowerCase()
+      if (tagSet.has(key)) return
+      tagSet.add(key)
+      tags.push(normalized)
+    })
+    const metadataTags = tags.slice(0, 8)
+
+    const year = new Date().getFullYear()
+    const metadataTitle = `${keywordData.keyword} (${year} Step-by-Step Guide)`
+    const metadataDescription = `Learn the exact framework I use for ${keywordData.keyword} so you can skip the guesswork, follow a proven checklist, and get results faster.`
+    const metadataCTA =
+      stage === "Breakout"
+        ? "Ask viewers to subscribe for weekly trend breakdowns while the topic is hot."
+        : stage === "Rising"
+          ? "Drive viewers to download your companion resource so they can implement immediately."
+          : stage === "Steady"
+            ? "Promote your evergreen playlist or course as the natural next step."
+            : "Invite comments with fresh questions you can answer in a follow-up video."
+
+    const outline = [
+      {
+        title: "Hook (0:00-0:20)",
+        detail: `Promise the outcome viewers get when they master ${keywordData.keyword}.`,
+      },
+      {
+        title: "Context (0:20-1:00)",
+        detail: `Explain why ${keywordData.keyword} matters right now and what changed in the landscape.`,
+      },
+      {
+        title: "Framework (1:00-4:00)",
+        detail: `Break down the core steps or pillars that make ${keywordData.keyword} work consistently.`,
+      },
+      {
+        title: "Proof & Examples (4:00-6:00)",
+        detail: `Show real workflows, analytics, or before/after wins tied to ${keywordData.keyword}.`,
+      },
+      {
+        title: "Implementation (6:00-8:00)",
+        detail: `Give viewers an actionable checklist or template they can copy immediately.`,
+      },
+      {
+        title: "CTA & Next Step (8:00-${lengthRange.max.toString().padStart(2, "0")}:00)",
+        detail: `Send viewers to the resource or playlist that deepens their journey beyond this video.`,
+      },
+    ]
+
+    const monthlySearches = keywordData.monthlySearches
+    const latest = monthlySearches[monthlySearches.length - 1] ?? 0
+    const previous = monthlySearches[monthlySearches.length - 2] ?? latest
+    const monthOverMonth = previous > 0 ? Math.round(((latest - previous) / previous) * 100) : 0
+    const peak = monthlySearches.length ? Math.max(...monthlySearches) : latest
+    const peakRelative = peak > 0 ? Math.round((latest / peak) * 100) : 100
+    const trendNarrative = monthOverMonth >= 0
+      ? `Up ${monthOverMonth}% vs last month and holding ${peakRelative}% of this year's peak interest.`
+      : `Down ${Math.abs(monthOverMonth)}% vs last month but still at ${peakRelative}% of the annual peak.`
+
+    const factorScores = [
+      {
+        label: "Demand",
+        value: volumeScore,
+        helper: `${(keywordData.searchVolume / 1000).toFixed(1)}K monthly searches`,
+      },
+      {
+        label: "Competition headroom",
+        value: competitionScore,
+        helper: `${keywordData.competition}% saturation (higher score = easier to rank)`,
+      },
+      {
+        label: "Momentum",
+        value: momentumScore,
+        helper:
+          sanitizedTrend >= 0
+            ? `${sanitizedTrend}% growth over baseline interest`
+            : `${Math.abs(sanitizedTrend)}% decline from peak interest`,
+      },
+      {
+        label: "Opportunity score",
+        value: keywordScore,
+        helper: "Blended score weighting demand, competition, and momentum",
+      },
+    ]
+
+    const checklist = [
+      cadenceAction,
+      `Storyboard the intro around this promise: ${primaryPromise}`,
+      differentiationAction,
+      `Work these supporting keywords into your description and tags: ${metadataTags.slice(0, 4).join(", ")}.`,
+      monetizationNote,
+    ]
+
+    const chartData = monthlySearches.map((value, index) => ({
+      month: `M${index + 1}`,
+      searches: value,
+    }))
+
+    return {
+      stage,
+      stageDescription,
+      opportunityLevel,
+      recommendedLengthLabel,
+      cadenceAction,
+      monetizationNote,
+      differentiationAction,
+      factorScores,
+      chartData,
+      trendNarrative,
+      outline,
+      metadata: {
+        title: metadataTitle,
+        description: metadataDescription,
+        cta: metadataCTA,
+        tags: metadataTags,
+      },
+      checklist,
+    }
+  }, [keywordData, keywordScore, relatedKeywords])
 
   return (
     <div className="space-y-6 p-6">
@@ -369,40 +560,225 @@ export default function RealTimeKeywordResearch() {
 
         {/* Analysis Tab */}
         <TabsContent value="analysis" className="space-y-6">
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle>Keyword Analysis Guide</CardTitle>
-              <CardDescription>Understanding the metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Search Volume</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Average monthly searches for this keyword. Higher volume = more potential traffic.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Competition</h4>
-                  <p className="text-sm text-muted-foreground">
-                    How many creators are targeting this keyword. Lower competition = easier to rank.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Trend</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Whether the keyword is rising or falling in popularity. Higher trend = growing interest.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Keyword Score</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Overall opportunity score (0-100). Combines volume, competition, and trend data.
-                  </p>
-                </div>
+          {!analysisDetails ? (
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle>Keyword Analysis</CardTitle>
+                <CardDescription>Run a keyword search to unlock tailored guidance.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Enter a keyword above to generate an actionable breakdown covering opportunity scores, content
+                  structure, and metadata suggestions.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <Card className="border-border/50 xl:col-span-2">
+                  <CardHeader>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="uppercase tracking-wide">
+                        {analysisDetails.opportunityLevel}
+                      </Badge>
+                      <Badge variant="outline">Stage: {analysisDetails.stage}</Badge>
+                      <Badge variant="outline">Difficulty: {keywordData?.difficulty}</Badge>
+                    </div>
+                    <CardTitle className="text-2xl">Opportunity snapshot</CardTitle>
+                    <CardDescription>{analysisDetails.stageDescription}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4">
+                      {analysisDetails.factorScores.map((factor) => (
+                        <div key={factor.label} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{factor.label}</span>
+                            <span className="font-medium text-foreground">{factor.value}</span>
+                          </div>
+                          <Progress value={factor.value} className="h-2" />
+                          {factor.helper ? (
+                            <p className="text-xs text-muted-foreground">{factor.helper}</p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-3">Momentum over the last 12 months</h4>
+                      <ChartContainer
+                        config={{
+                          searches: {
+                            label: "Monthly searches",
+                            color: "hsl(var(--chart-1))",
+                          },
+                        }}
+                        className="h-56"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={analysisDetails.chartData}>
+                            <defs>
+                              <linearGradient
+                                id={analysisTrendGradientId}
+                                x1="0%"
+                                y1="0%"
+                                x2="100%"
+                                y2="0%"
+                              >
+                                <stop offset="0%" stopColor="hsl(var(--chart-1))" />
+                                <stop offset="50%" stopColor="hsl(var(--chart-2))" />
+                                <stop offset="100%" stopColor="hsl(var(--chart-3))" />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Line
+                              type="monotone"
+                              dataKey="searches"
+                              stroke={`url(#${analysisTrendGradientId})`}
+                              strokeWidth={2}
+                              dot={{
+                                r: 3,
+                                stroke: `url(#${analysisTrendGradientId})`,
+                                strokeWidth: 2,
+                                fill: "var(--background)",
+                              }}
+                              activeDot={{
+                                r: 5,
+                                strokeWidth: 0,
+                                fill: `url(#${analysisTrendGradientId})`,
+                              }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                      <p className="mt-2 text-xs text-muted-foreground">{analysisDetails.trendNarrative}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle>Performance forecast</CardTitle>
+                    <CardDescription>Modeled for a medium-sized channel</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {performance ? (
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="rounded-lg bg-muted/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Est. Views</p>
+                          <p className="text-lg font-semibold text-foreground">
+                            {formatNumber(performance.estimatedViews)}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-muted/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Est. Engagement</p>
+                          <p className="text-lg font-semibold text-foreground">
+                            {formatNumber(performance.estimatedEngagement)}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-muted/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Est. CTR</p>
+                          <p className="text-lg font-semibold text-foreground">
+                            {performance.estimatedCTR}%
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Search for a keyword first to model expected performance for your channel size.
+                      </p>
+                    )}
+
+                    <Separator />
+
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div>
+                        <span className="font-medium text-foreground">Recommended length: </span>
+                        {analysisDetails.recommendedLengthLabel}
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">Launch timing: </span>
+                        {analysisDetails.cadenceAction}
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">Monetization focus: </span>
+                        {analysisDetails.monetizationNote}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle>Content blueprint</CardTitle>
+                    <CardDescription>Structure the video to earn retention</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {analysisDetails.outline.map((item) => (
+                        <div key={item.title} className="rounded-lg border border-border/40 p-3">
+                          <p className="font-medium text-foreground">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{item.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{analysisDetails.differentiationAction}</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle>Metadata &amp; SEO assets</CardTitle>
+                    <CardDescription>Copy and adapt to your voice</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Suggested title</p>
+                      <p className="font-medium text-foreground">{analysisDetails.metadata.title}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Description hook</p>
+                      <p className="text-sm text-muted-foreground">{analysisDetails.metadata.description}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Primary CTA</p>
+                      <p className="text-sm text-muted-foreground">{analysisDetails.metadata.cta}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Tags</p>
+                      <div className="flex flex-wrap gap-2">
+                        {analysisDetails.metadata.tags.map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs capitalize">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle>Action checklist</CardTitle>
+                  <CardDescription>Final prep before you hit publish</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {analysisDetails.checklist.map((action, index) => (
+                    <div key={`${action}-${index}`} className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-primary" aria-hidden />
+                      <p className="text-sm text-muted-foreground">{action}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>
