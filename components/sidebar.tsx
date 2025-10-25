@@ -11,6 +11,7 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "home", label: "Dashboard", icon: "📊" },
+  { id: "daily", label: "Daily Ideas", icon: "💡" },
   { id: "keywords", label: "Keyword Research", icon: "🔍" },
   { id: "competitors", label: "Competitors", icon: "🎯" },
   { id: "trending", label: "Trending", icon: "🔥" },

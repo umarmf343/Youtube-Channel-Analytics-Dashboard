@@ -1,5 +1,28 @@
 import type { User, Video } from "@/lib/types"
 
+export interface DailyVideoIdeaPerformance {
+  expectedViews: number
+  expectedWatchTimeMinutes: number
+  expectedCtr: number
+  confidence: number
+}
+
+export interface DailyVideoIdea {
+  id: string
+  title: string
+  description: string
+  hook: string
+  format: "Long-form" | "Short" | "Livestream"
+  primaryKeyword: string
+  audienceFocus: string
+  publishWindow: string
+  supportingPoints: string[]
+  aiInsights: string
+  keywords: string[]
+  tags: string[]
+  performance: DailyVideoIdeaPerformance
+}
+
 export interface YouTubeKeywordData {
   keyword: string
   searchVolume: number
@@ -19,6 +42,7 @@ const API_ENDPOINTS = {
   competitor: "/api/competitor-keywords",
   channelProfile: "/api/channel-profile",
   channelVideos: "/api/channel-videos",
+  dailyIdeas: "/api/daily-ideas",
 } as const
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -93,6 +117,28 @@ export async function fetchCompetitorKeywords(channelName: string): Promise<stri
 
   const payload = await handleResponse<{ keywords: string[] }>(response)
   return payload.keywords
+}
+
+export async function fetchDailyVideoIdeas(
+  channelId: string,
+  options: { channelName?: string; focus?: string } = {},
+): Promise<DailyVideoIdea[]> {
+  const params = new URLSearchParams({ channelId })
+  if (options.channelName) {
+    params.set("channelName", options.channelName)
+  }
+  if (options.focus) {
+    params.set("focus", options.focus)
+  }
+
+  const response = await fetch(`${API_ENDPOINTS.dailyIdeas}?${params.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  })
+
+  const payload = await handleResponse<{ ideas: DailyVideoIdea[] }>(response)
+  return payload.ideas
 }
 
 export function calculateDifficulty(competition: number, volume: number): "Easy" | "Medium" | "Hard" {

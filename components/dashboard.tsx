@@ -8,13 +8,14 @@ import DashboardHome from "@/components/dashboard-home"
 import KeywordTools from "@/components/keyword-tools"
 import CompetitorTracker from "@/components/competitor-tracker"
 import TrendingKeywordsPage from "@/components/trending-keywords-page"
+import DailyIdeas from "@/components/daily-ideas"
 
 interface DashboardProps {
   user: User
   onLogout: () => void
 }
 
-type Page = "home" | "keywords" | "competitors" | "trending"
+type Page = "home" | "keywords" | "competitors" | "trending" | "daily"
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentPage, setCurrentPage] = useState<Page>("home")
@@ -28,6 +29,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return <CompetitorTracker />
       case "trending":
         return <TrendingKeywordsPage />
+      case "daily":
+        return <DailyIdeas user={user} />
       default:
         return <DashboardHome user={user} />
     }

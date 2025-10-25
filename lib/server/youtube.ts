@@ -1,5 +1,5 @@
 import type { User, Video } from "@/lib/types"
-import type { YouTubeKeywordData } from "@/lib/youtube-api"
+import type { DailyVideoIdea, YouTubeKeywordData } from "@/lib/youtube-api"
 import { calculateDifficulty } from "@/lib/youtube-api"
 
 const API_BASE_URL = "https://www.googleapis.com/youtube/v3"
@@ -170,6 +170,251 @@ function getTrendingFallback(category: string): YouTubeKeywordData[] {
     cpc: item.cpc,
     volume: item.volume ?? item.searchVolume,
   }))
+}
+
+type DailyIdeaTemplate = {
+  id: string
+  format: DailyVideoIdea["format"]
+  audienceFocus: string
+  publishWindow: string
+  title: (context: TemplateContext) => string
+  description: (context: TemplateContext) => string
+  hook: (context: TemplateContext) => string
+  supportingPoints: (context: TemplateContext) => string[]
+  aiInsights: (context: TemplateContext) => string
+  keywords: (context: TemplateContext) => string[]
+  tags: (context: TemplateContext) => string[]
+}
+
+type TemplateContext = {
+  topic: string
+  topicLower: string
+  channelName?: string
+}
+
+const DAILY_IDEA_TEMPLATES: DailyIdeaTemplate[] = [
+  {
+    id: "playbook",
+    format: "Long-form",
+    audienceFocus: "Core subscribers ready for a deep dive",
+    publishWindow: "Schedule for Tuesday 4-6 PM",
+    title: ({ topic }) => `${topic} Playbook: The 30-Day System We're Testing`,
+    description: ({ topic, channelName }) =>
+      `Document a 30-day sprint where ${channelName ?? "the channel"} applies a focused ${topic.toLowerCase()} system. Share the setup, workflow footage, and measurable milestones viewers can copy.`,
+    hook: ({ topicLower }) =>
+      `Open with "Here is the exact ${topicLower} roadmap we just started using" to frame the video as a real-time experiment.`,
+    supportingPoints: ({ topicLower }) => [
+      `Break the ${topicLower} framework into three actionable pillars with on-screen checklists`,
+      `Share before/after analytics to prove traction and keep viewers engaged`,
+      `Close with a downloadable tracker or template to boost saves and watch time`,
+    ],
+    aiInsights: ({ topicLower }) =>
+      `Search demand for "${topicLower}" is climbing and tutorial-style breakdowns with real dashboards hold attention 28% longer than talking-head explainers this week.`,
+    keywords: ({ topicLower }) => [
+      `${topicLower} strategy`,
+      `${topicLower} workflow`,
+      `how to improve ${topicLower}`,
+    ],
+    tags: ({ topic }) => [topic, "case study", "creator analytics"],
+  },
+  {
+    id: "shorts",
+    format: "Short",
+    audienceFocus: "New viewers scrolling Shorts",
+    publishWindow: "Post between 9-11 AM for momentum",
+    title: ({ topic }) => `${topic} Hack You Can Try Today`,
+    description: ({ topicLower }) =>
+      `Deliver a punchy 45-second walkthrough of one repeatable ${topicLower} tactic using captions and on-screen timers to drive retention.`,
+    hook: ({ topicLower }) =>
+      `Start with an over-the-shoulder "Watch me apply this ${topicLower} trick live" moment to stop the scroll.`,
+    supportingPoints: ({ topicLower }) => [
+      `Use a 3-step overlay so viewers can screenshot the ${topicLower} process`,
+      `Layer trending audio quietly underneath to improve completion rate`,
+      `Add a pinned comment linking to your deeper dive for traffic handoff`,
+    ],
+    aiInsights: ({ topicLower }) =>
+      `Shorts mentioning "${topicLower}" are converting 1.4x more subscribers than average this week when paired with an on-screen countdown CTA.`,
+    keywords: ({ topicLower }) => [
+      `${topicLower} shorts`,
+      `${topicLower} tip`,
+      `${topicLower} quick wins`,
+    ],
+    tags: ({ topic }) => [topic, "shorts", "creator tips"],
+  },
+  {
+    id: "live-lab",
+    format: "Livestream",
+    audienceFocus: "Engaged community members",
+    publishWindow: "Go live Thursday 1-2 PM",
+    title: ({ topic }) => `${topic} Lab: Build It With Me (Live)`,
+    description: ({ topicLower }) =>
+      `Host a 60-minute live session implementing the ${topicLower} framework while answering chat questions and sharing templates in real time.`,
+    hook: ({ topicLower }) =>
+      `Tease "We're building a ${topicLower} system from scratch today—copy the workflow in real time" across socials beforehand.`,
+    supportingPoints: ({ topicLower }) => [
+      `Prepare interactive checkpoints so chat votes on ${topicLower} decisions`,
+      `Share a companion Notion or Google Sheet link mid-stream`,
+      `Clip highlights afterward for Shorts to keep the flywheel spinning`,
+    ],
+    aiInsights: ({ topicLower }) =>
+      `Live rooms tackling "${topicLower}" topics see a 35% higher average watch time when paired with downloadable assets promoted in chat.`,
+    keywords: ({ topicLower }) => [
+      `${topicLower} livestream`,
+      `${topicLower} workshop`,
+      `${topicLower} Q&A`,
+    ],
+    tags: ({ topic }) => [topic, "live", "community"],
+  },
+  {
+    id: "breakdown",
+    format: "Long-form",
+    audienceFocus: "Search traffic and evergreen viewers",
+    publishWindow: "Release Sunday 10 AM",
+    title: ({ topic }) => `${topic} Breakdown: What Top Creators Do Differently`,
+    description: ({ topicLower }) =>
+      `Analyze three creators executing ${topicLower} exceptionally well. Reverse-engineer their hooks, packaging, and retention tactics with chapter markers.`,
+    hook: ({ topicLower }) =>
+      `Lead with "I watched 100 hours of ${topicLower} content so you don't have to" to set stakes and authority.`,
+    supportingPoints: ({ topicLower }) => [
+      `Highlight recurring thumbnail and title formulas that win the ${topicLower} click`,
+      `Overlay retention graphs (real or mocked) to demonstrate pacing wins`,
+      `End with a rapid-fire checklist summarizing what to replicate next upload`,
+    ],
+    aiInsights: ({ topicLower }) =>
+      `Comparison videos with "${topicLower}" in the title are trending +19% in suggested traffic and surface in browse feeds for up to 14 days.`,
+    keywords: ({ topicLower }) => [
+      `best ${topicLower} channels`,
+      `${topicLower} examples`,
+      `${topicLower} tips 2024`,
+    ],
+    tags: ({ topic }) => [topic, "analysis", "content strategy"],
+  },
+]
+
+function inferFocusFromChannelName(channelName?: string): string {
+  if (!channelName) {
+    return "creator growth"
+  }
+
+  const normalized = channelName.toLowerCase()
+  const focusMap: Array<{ keywords: string[]; focus: string }> = [
+    { keywords: ["ai", "tech", "code", "automation"], focus: "ai productivity" },
+    { keywords: ["marketing", "business", "brand", "sales"], focus: "creator marketing" },
+    { keywords: ["fitness", "health", "wellness", "habit"], focus: "wellness routines" },
+    { keywords: ["finance", "invest", "crypto", "money"], focus: "personal finance" },
+  ]
+
+  for (const entry of focusMap) {
+    if (entry.keywords.some((keyword) => normalized.includes(keyword))) {
+      return entry.focus
+    }
+  }
+
+  return "creator growth"
+}
+
+function formatTopicName(topic: string): string {
+  return topic
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => (word.length <= 3 ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1).toLowerCase()))
+    .join(" ")
+}
+
+function hashString(value: string): number {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
+  }
+  return hash
+}
+
+function createSeededRandom(seed: number): () => number {
+  let current = seed >>> 0
+  return () => {
+    current = (current * 1664525 + 1013904223) % 0x100000000
+    return current / 0x100000000
+  }
+}
+
+function toOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
+function buildPerformanceMetrics(format: DailyVideoIdea["format"], random: () => number) {
+  const viewRange =
+    format === "Short"
+      ? [18000, 90000]
+      : format === "Livestream"
+        ? [8000, 24000]
+        : [14000, 68000]
+  const watchTimeRange =
+    format === "Short"
+      ? [2.1, 4]
+      : format === "Livestream"
+        ? [55, 95]
+        : [8, 16]
+  const ctrRange =
+    format === "Short"
+      ? [8, 13]
+      : format === "Livestream"
+        ? [3.5, 6]
+        : [4.5, 9.5]
+
+  const expectedViews = Math.round(viewRange[0] + random() * (viewRange[1] - viewRange[0]))
+  const expectedWatchTimeMinutes = toOneDecimal(watchTimeRange[0] + random() * (watchTimeRange[1] - watchTimeRange[0]))
+  const expectedCtr = toOneDecimal(ctrRange[0] + random() * (ctrRange[1] - ctrRange[0]))
+  const confidence = Math.round(68 + random() * 24)
+
+  return {
+    expectedViews,
+    expectedWatchTimeMinutes,
+    expectedCtr,
+    confidence,
+  }
+}
+
+function buildDailyIdeasFallback({
+  channelId,
+  channelName,
+  focus,
+}: {
+  channelId: string
+  channelName?: string
+  focus?: string
+}): DailyVideoIdea[] {
+  const resolvedFocus = focus?.trim() || inferFocusFromChannelName(channelName)
+  const topic = resolvedFocus || "creator growth"
+  const topicName = formatTopicName(topic)
+  const context: TemplateContext = {
+    topic: topicName,
+    topicLower: topic.toLowerCase(),
+    channelName,
+  }
+
+  const baseSeed = hashString(`${channelId}:${topic.toLowerCase()}`)
+
+  return DAILY_IDEA_TEMPLATES.map((template, index) => {
+    const seededRandom = createSeededRandom(baseSeed + index * 97)
+    const performance = buildPerformanceMetrics(template.format, seededRandom)
+    const keywords = template.keywords(context)
+
+    return {
+      id: `${template.id}-${index}`,
+      title: template.title(context),
+      description: template.description(context),
+      hook: template.hook(context),
+      format: template.format,
+      primaryKeyword: keywords[0] ?? context.topicLower,
+      audienceFocus: template.audienceFocus,
+      publishWindow: template.publishWindow,
+      supportingPoints: template.supportingPoints(context),
+      aiInsights: template.aiInsights(context),
+      keywords,
+      tags: template.tags(context),
+      performance,
+    }
+  })
 }
 
 type SearchListResponse = {
@@ -498,6 +743,23 @@ export async function fetchTrendingKeywordData(category: string): Promise<YouTub
       return fallback
     }
     throw error
+  }
+}
+
+export async function generateDailyVideoIdeas({
+  channelId,
+  channelName,
+  focus,
+}: {
+  channelId: string
+  channelName?: string
+  focus?: string
+}): Promise<DailyVideoIdea[]> {
+  try {
+    return buildDailyIdeasFallback({ channelId, channelName, focus })
+  } catch (error) {
+    console.error("[daily-ideas] Unable to assemble fallback ideas", error)
+    throw new Error("Failed to generate daily video ideas")
   }
 }
 
