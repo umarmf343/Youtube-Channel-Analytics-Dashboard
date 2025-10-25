@@ -13,6 +13,7 @@ const menuItems = [
   { id: "home", label: "Dashboard", icon: "📊" },
   { id: "keywords", label: "Keyword Research", icon: "🔍" },
   { id: "competitors", label: "Competitors", icon: "🎯" },
+  { id: "analytics", label: "Channel Analytics", icon: "📈" },
   { id: "trending", label: "Trending", icon: "🔥" },
 ]
 
