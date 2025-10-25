@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { TrendingUp, UsersRound } from "lucide-react"
 import {
   Card,
@@ -56,6 +56,8 @@ const createInitialData = (): RealTimePoint[] => {
 export default function RealTimeStats() {
   const [data, setData] = useState<RealTimePoint[]>(() => createInitialData())
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const gradientId = useId()
+  const viewsGradientId = `views-line-${gradientId.replace(/:/g, "")}`
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -146,6 +148,13 @@ export default function RealTimeStats() {
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={viewsGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(var(--chart-1))" />
+                    <stop offset="50%" stopColor="hsl(var(--chart-2))" />
+                    <stop offset="100%" stopColor="hsl(var(--chart-3))" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="timestamp" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis
@@ -156,7 +165,20 @@ export default function RealTimeStats() {
                   tickFormatter={(value) => `${value.toLocaleString()}`}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="views" stroke="var(--color-views)" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="views"
+                  stroke={`url(#${viewsGradientId})`}
+                  strokeWidth={3}
+                  dot={{
+                    r: 5,
+                    strokeWidth: 2,
+                    fill: "var(--background)",
+                    stroke: "hsl(var(--chart-2))",
+                  }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: "hsl(var(--chart-3))" }}
+                  strokeLinecap="round"
+                />
               </LineChart>
             </ResponsiveContainer>
           </ChartContainer>
