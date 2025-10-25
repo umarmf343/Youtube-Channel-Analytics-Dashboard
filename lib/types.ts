@@ -84,3 +84,19 @@ export interface CompetitorAnalysisResponse {
   insights: CompetitorInsights
   generatedAt: string
 }
+
+export interface DailyIdea {
+  id: string
+  title: string
+  summary: string
+  focusKeyword: string
+  confidence: "High" | "Medium" | "Emerging"
+  score: number
+  projectedViews: number
+  engagementBoost: number
+  recommendedUploadTime: string
+  supportingPoints: string[]
+  inspiration?: string
+  performanceLift?: number
+  trendSignal?: string
+}
