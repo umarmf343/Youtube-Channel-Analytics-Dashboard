@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useId, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -72,6 +72,8 @@ export default function TrendingKeywordsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedKeyword, setSelectedKeyword] = useState<YouTubeKeywordData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const gradientId = useId()
+  const trendGradientId = `trend-line-${gradientId.replace(/:/g, "")}`
 
   const categories = ["technology", "business", "lifestyle"]
 
@@ -262,6 +264,19 @@ export default function TrendingKeywordsPage() {
                                   searches,
                                 }))}
                               >
+                                <defs>
+                                  <linearGradient
+                                    id={trendGradientId}
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="100%"
+                                    y2="0%"
+                                  >
+                                    <stop offset="0%" stopColor="hsl(var(--chart-1))" />
+                                    <stop offset="50%" stopColor="hsl(var(--chart-2))" />
+                                    <stop offset="100%" stopColor="hsl(var(--chart-3))" />
+                                  </linearGradient>
+                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="month" />
                                 <YAxis />
@@ -269,8 +284,19 @@ export default function TrendingKeywordsPage() {
                                 <Line
                                   type="monotone"
                                   dataKey="searches"
-                                  stroke="var(--color-searches)"
+                                  stroke={`url(#${trendGradientId})`}
                                   strokeWidth={2}
+                                  dot={{
+                                    r: 4,
+                                    stroke: `url(#${trendGradientId})`,
+                                    strokeWidth: 2,
+                                    fill: "var(--background)",
+                                  }}
+                                  activeDot={{
+                                    r: 6,
+                                    strokeWidth: 0,
+                                    fill: `url(#${trendGradientId})`,
+                                  }}
                                 />
                               </LineChart>
                             </ResponsiveContainer>
