@@ -53,7 +53,7 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - **Optimization Engine**: AI-powered recommendations for title, description, tags, and upload time
 - **Export Data**: Download analytics in CSV or JSON format
 - **Multi-Category Support**: Technology, Business, Lifestyle categories
-- **Live & Resilient Data Fetching**: Secure Next.js API routes hit the YouTube Data API when `YOUTUBE_API_KEY` is configured, with intelligent fallbacks to simulated data to keep the UI responsive offline
+- **Live Data Fetching**: Secure Next.js API routes rely on the YouTube Data API when `YOUTUBE_API_KEY` is configured
 
 ### 7. Integrated Project Enhancements (NEW)
 - **Channel Command Center** *(Streamlit dashboard fusion)*: Channel snapshot, searchable library, Prophet-style forecasts, and tag performance explorer migrated from the Python/Streamlit tooling.

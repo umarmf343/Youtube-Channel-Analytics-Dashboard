@@ -17,6 +17,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ suggestions })
   } catch (error) {
     console.error("[keyword-suggestions] Unable to fetch live data", error)
-    return NextResponse.json({ error: "Failed to fetch keyword suggestions" }, { status: 502 })
+    return NextResponse.json(
+      { error: "Unable to fetch keyword suggestions from YouTube" },
+      { status: 502 },
+    )
   }
 }
