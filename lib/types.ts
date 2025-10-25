@@ -100,3 +100,29 @@ export interface DailyIdea {
   performanceLift?: number
   trendSignal?: string
 }
+
+export interface RealTimeStatsPoint {
+  timestamp: string
+  label: string
+  views: number
+  likes: number
+  comments: number
+  watchTimeMinutes: number
+  liveViewers: number
+}
+
+export interface RealTimeStatsSummary {
+  averageViews: number
+  engagementRate: number
+  engagementChange: number
+  viewsChange: number
+  watchTimeHours: number
+  totalEngagement: number
+  totalViews: number
+}
+
+export interface RealTimeStatsPayload {
+  points: RealTimeStatsPoint[]
+  summary: RealTimeStatsSummary
+  generatedAt: string
+}
