@@ -12,6 +12,13 @@ export class MissingYouTubeApiKeyError extends Error {
   }
 }
 
+export class YouTubeQuotaExceededError extends Error {
+  constructor(message = "YouTube API quota exceeded") {
+    super(message)
+    this.name = "YouTubeQuotaExceededError"
+  }
+}
+
 const STOP_WORDS = new Set([
   "the",
   "and",
@@ -607,7 +614,58 @@ async function callYouTubeApi<T>(endpoint: string, params: Record<string, string
   })
 
   if (!response.ok) {
-    const message = await response.text()
+    const rawBody = await response.text()
+    let parsed: unknown
+    let message = rawBody
+
+    try {
+      parsed = JSON.parse(rawBody)
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "error" in parsed &&
+        parsed.error &&
+        typeof parsed.error === "object" &&
+        parsed.error !== null &&
+        "message" in parsed.error &&
+        typeof parsed.error.message === "string"
+      ) {
+        message = parsed.error.message
+      }
+    } catch (error) {
+      // rawBody is not JSON – keep the original text message
+      parsed = undefined
+    }
+
+    const quotaExceeded = (() => {
+      if (response.status !== 403) return false
+
+      if (typeof message === "string" && /quota/i.test(message)) {
+        return true
+      }
+
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "error" in parsed &&
+        parsed.error &&
+        typeof parsed.error === "object" &&
+        parsed.error !== null &&
+        "errors" in parsed.error &&
+        Array.isArray(parsed.error.errors)
+      ) {
+        return parsed.error.errors.some((item) => {
+          return Boolean(item && typeof item === "object" && "reason" in item && item.reason === "quotaExceeded")
+        })
+      }
+
+      return false
+    })()
+
+    if (quotaExceeded) {
+      throw new YouTubeQuotaExceededError(message)
+    }
+
     throw new Error(`YouTube API ${endpoint} request failed: ${response.status} ${message}`)
   }
 
