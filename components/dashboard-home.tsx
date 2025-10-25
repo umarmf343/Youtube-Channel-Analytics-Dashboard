@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { User, Video } from "@/lib/types"
 import { fetchChannelVideos } from "@/lib/youtube-api"
 import { Spinner } from "@/components/ui/spinner"
+import RealTimeStats from "@/components/real-time-stats"
 
 interface DashboardHomeProps {
   user: User
@@ -113,6 +114,8 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
           </CardHeader>
         </Card>
       </div>
+
+      <RealTimeStats />
 
       <Card className="border-border/50">
         <CardHeader>
