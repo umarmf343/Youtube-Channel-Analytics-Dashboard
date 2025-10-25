@@ -8,6 +8,14 @@ import { fetchChannelVideos } from "@/lib/youtube-api"
 import { Spinner } from "@/components/ui/spinner"
 import RealTimeStats from "@/components/real-time-stats"
 import { generateDailyVideoIdeas } from "@/lib/daily-ideas"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface DashboardHomeProps {
   user: User
@@ -17,6 +25,7 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
   const [videos, setVideos] = useState<Video[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     let isMounted = true
@@ -49,6 +58,47 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
       isMounted = false
     }
   }, [user.channelId])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [videos.length])
+
+  const sortedVideos = useMemo(
+    () =>
+      videos
+        .slice()
+        .sort((a, b) => b.views - a.views),
+    [videos],
+  )
+
+  const videosPerPage = 4
+
+  const totalPages = useMemo(() => {
+    if (!sortedVideos.length) {
+      return 0
+    }
+
+    return Math.ceil(sortedVideos.length / videosPerPage)
+  }, [sortedVideos.length])
+
+  useEffect(() => {
+    if (currentPage > 1 && totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+
+    if (currentPage > 1 && totalPages === 0) {
+      setCurrentPage(1)
+    }
+  }, [currentPage, totalPages])
+
+  const paginatedVideos = useMemo(() => {
+    if (!sortedVideos.length) {
+      return []
+    }
+
+    const startIndex = (currentPage - 1) * videosPerPage
+    return sortedVideos.slice(startIndex, startIndex + videosPerPage)
+  }, [currentPage, sortedVideos, videosPerPage])
 
   const metrics = useMemo(() => {
     if (!videos.length) {
@@ -217,11 +267,7 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
             <p className="text-muted-foreground">No videos found for this channel yet.</p>
           ) : (
             <div className="space-y-3">
-              {videos
-                .slice()
-                .sort((a, b) => b.views - a.views)
-                .slice(0, 10)
-                .map((video) => (
+              {paginatedVideos.map((video) => (
                   <div key={video.id} className="flex items-start gap-4 rounded-lg border border-border/40 p-3">
                     {video.thumbnail ? (
                       <img src={video.thumbnail} alt="" className="h-16 w-28 rounded object-cover" />
@@ -238,6 +284,54 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
                     </div>
                   </div>
                 ))}
+              {totalPages > 1 ? (
+                <Pagination className="pt-2">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          if (currentPage > 1) {
+                            setCurrentPage(currentPage - 1)
+                          }
+                        }}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, index) => {
+                      const page = index + 1
+
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            isActive={page === currentPage}
+                            onClick={(event) => {
+                              event.preventDefault()
+                              setCurrentPage(page)
+                            }}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    })}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          if (currentPage < totalPages) {
+                            setCurrentPage(currentPage + 1)
+                          }
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              ) : null}
             </div>
           )}
         </CardContent>
