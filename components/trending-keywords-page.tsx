@@ -45,12 +45,6 @@ export default function TrendingKeywordsPage() {
     }
   }
 
-  const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-600 dark:text-green-400"
-    if (score >= 70) return "text-yellow-600 dark:text-yellow-400"
-    return "text-red-600 dark:text-red-400"
-  }
-
   const currentTrending = trendingByCategory[selectedCategory] || []
 
   return (
@@ -130,28 +124,67 @@ export default function TrendingKeywordsPage() {
                       <CardContent className="space-y-6">
                         {/* Metrics */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="p-4 rounded-lg bg-muted/50">
-                            <p className="text-sm text-muted-foreground mb-1">Search Volume</p>
-                            <p className="text-2xl font-bold text-foreground">
-                              {(selectedKeyword.searchVolume / 1000).toFixed(1)}K
-                            </p>
-                          </div>
-                          <div className="p-4 rounded-lg bg-muted/50">
-                            <p className="text-sm text-muted-foreground mb-1">Trend</p>
-                            <p className="text-2xl font-bold text-foreground">{selectedKeyword.trend}%</p>
-                          </div>
-                          <div className="p-4 rounded-lg bg-muted/50">
-                            <p className="text-sm text-muted-foreground mb-1">Competition</p>
-                            <p className="text-2xl font-bold text-foreground">{selectedKeyword.competition}%</p>
-                          </div>
-                          <div className="p-4 rounded-lg bg-muted/50">
-                            <p className="text-sm text-muted-foreground mb-1">Score</p>
-                            <p
-                              className={`text-2xl font-bold ${getScoreColor(calculateKeywordScore(selectedKeyword))}`}
+                          {[
+                            {
+                              label: "Search Volume",
+                              value: `${(selectedKeyword.searchVolume / 1000).toFixed(1)}K`,
+                              gradient: "from-sky-500/20 via-sky-500/10 to-transparent",
+                              text: "text-sky-600 dark:text-sky-400",
+                            },
+                            {
+                              label: "Trend",
+                              value: `${selectedKeyword.trend}%`,
+                              gradient: "from-amber-500/20 via-amber-500/10 to-transparent",
+                              text: "text-amber-600 dark:text-amber-400",
+                            },
+                            {
+                              label: "Competition",
+                              value: `${selectedKeyword.competition}%`,
+                              gradient: "from-rose-500/20 via-rose-500/10 to-transparent",
+                              text: "text-rose-600 dark:text-rose-400",
+                            },
+                          ].map((metric) => (
+                            <div
+                              key={metric.label}
+                              className={
+                                "rounded-xl border border-border/50 bg-gradient-to-br p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg " +
+                                metric.gradient
+                              }
                             >
-                              {calculateKeywordScore(selectedKeyword)}
-                            </p>
-                          </div>
+                              <p className="mb-1 text-sm text-muted-foreground">{metric.label}</p>
+                              <p className={`text-2xl font-bold ${metric.text}`}>{metric.value}</p>
+                            </div>
+                          ))}
+                          {(() => {
+                            const score = calculateKeywordScore(selectedKeyword)
+                            const scoreStyles = (() => {
+                              if (score >= 85) {
+                                return {
+                                  gradient: "from-emerald-500/20 via-emerald-500/10 to-transparent",
+                                  text: "text-emerald-600 dark:text-emerald-400",
+                                }
+                              }
+                              if (score >= 70) {
+                                return {
+                                  gradient: "from-amber-500/20 via-amber-500/10 to-transparent",
+                                  text: "text-amber-600 dark:text-amber-400",
+                                }
+                              }
+                              return {
+                                gradient: "from-rose-500/20 via-rose-500/10 to-transparent",
+                                text: "text-rose-600 dark:text-rose-400",
+                              }
+                            })()
+
+                            return (
+                              <div
+                                className={`rounded-xl border border-border/50 bg-gradient-to-br p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg ${scoreStyles.gradient}`}
+                              >
+                                <p className="mb-1 text-sm text-muted-foreground">Score</p>
+                                <p className={`text-2xl font-bold ${scoreStyles.text}`}>{score}</p>
+                              </div>
+                            )
+                          })()}
                         </div>
 
                         {/* Trend Chart */}
