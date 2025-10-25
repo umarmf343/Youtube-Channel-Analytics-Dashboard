@@ -10,6 +10,62 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { fetchTrendingKeywords, calculateKeywordScore, type YouTubeKeywordData } from "@/lib/youtube-api"
 import { Spinner } from "@/components/ui/spinner"
 
+const highCpmNiches: Array<{ name: string; cpm?: string }> = [
+  { name: "Making Money Online", cpm: "$13.52" },
+  { name: "Digital Marketing", cpm: "$12.52" },
+  { name: "Personal Finance & Investments", cpm: "$12.00" },
+  { name: "Affiliate Marketing", cpm: "$22.00" },
+  { name: "Tech Reviews & Gadgets", cpm: "$10–20" },
+  { name: "Business Strategies & Entrepreneurship" },
+  { name: "Real Estate Investing" },
+  { name: "Insurance & Wealth Management" },
+  { name: "Cryptocurrency & Blockchain" },
+  { name: "Legal Advice & Law Tutorials" },
+  { name: "B2B Marketing & SaaS Tools" },
+  { name: "Online Education & E-learning" },
+  { name: "Website Hosting & Development" },
+  { name: "Amazon Affiliate Marketing" },
+  { name: "VPN & Cybersecurity" },
+  { name: "Dropshipping & E-commerce" },
+  { name: "Stock Market Analysis & Trading" },
+  { name: "Credit Cards & Financial Products" },
+  { name: "Financial Independence & FIRE Movement" },
+  { name: "Luxury Goods & High-End Products" },
+]
+
+const evergreenNiches = [
+  "Gaming",
+  "Fitness & Bodybuilding",
+  "Health & Wellness",
+  "Beauty & Makeup Tutorials",
+  "Fashion & Try-On Hauls",
+  "Food & Cooking",
+  "Travel Vlogging",
+  "Music Covers & Originals",
+  "Sports Highlights & Analysis",
+  "Comedy & Sketches",
+  "Motivational & Self-Help",
+  "Parenting & Family Advice",
+  "Pet Care & Animal Videos",
+  "Unboxing & Product Reviews",
+  "ASMR",
+  "Luxury Travel",
+  "Food Challenges",
+  "Celebrity Gossip & Pop Culture",
+  "Documentaries & Storytelling",
+  "Life Hacks & DIY",
+  "Tech Tutorials & How-To Guides",
+  "Photography & Videography Tips",
+  "Language Learning",
+  "Personal Vlogging",
+  "Productivity & Time Management",
+  "Minimalism & Sustainable Living",
+  "Motivational Speeches",
+  "Virtual Reality (VR) Content",
+  "Augmented Reality (AR) Experiences",
+  "Artificial Intelligence (AI) Applications",
+]
+
 export default function TrendingKeywordsPage() {
   const [trendingByCategory, setTrendingByCategory] = useState<Record<string, YouTubeKeywordData[]>>({})
   const [selectedCategory, setSelectedCategory] = useState("technology")
@@ -231,6 +287,54 @@ export default function TrendingKeywordsPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle>High-CPM &amp; Profitable Niches</CardTitle>
+            <CardDescription>
+              These niches attract high-paying advertisers, making them ideal for monetization.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {highCpmNiches.map((niche) => (
+              <div
+                key={niche.name}
+                className="rounded-lg border border-border/40 bg-muted/40 p-3"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <p className="font-medium text-sm text-foreground">{niche.name}</p>
+                  {niche.cpm ? (
+                    <Badge variant="outline" className="text-xs">
+                      Avg. CPM {niche.cpm}
+                    </Badge>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle>🎮 Trending &amp; Evergreen Niches</CardTitle>
+            <CardDescription>
+              Broad-appeal topics with consistent viewership potential for Tasty Edits content planning.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {evergreenNiches.map((niche) => (
+                <div
+                  key={niche}
+                  className="rounded-lg border border-border/30 bg-background p-3 text-sm text-foreground shadow-sm"
+                >
+                  {niche}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
