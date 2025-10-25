@@ -14,6 +14,7 @@ const menuItems = [
   { id: "keywords", label: "Keyword Research", icon: "🔍" },
   { id: "competitors", label: "Competitors", icon: "🎯" },
   { id: "trending", label: "Trending", icon: "🔥" },
+  { id: "bulk", label: "Bulk Descriptions", icon: "📝" },
 ]
 
 export default function Sidebar({ currentPage, onPageChange, isOpen }: SidebarProps) {
