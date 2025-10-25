@@ -153,6 +153,356 @@ const TRENDING_FALLBACK_KEYWORDS: Record<string, TrendingFallbackConfig[]> = {
       cpc: 1.65,
     },
   ],
+  finance: [
+    {
+      keyword: "high yield savings strategy",
+      searchVolume: 31000,
+      competition: 49,
+      trend: 81,
+      relatedKeywords: ["passive income", "bank interest", "savings account"],
+      monthlySearches: [
+        9200, 9700, 10200, 10800, 11400, 12100, 12800, 13500, 14300, 15100, 16000, 16800,
+      ],
+      cpc: 3.6,
+    },
+    {
+      keyword: "stock market recession plan",
+      searchVolume: 28000,
+      competition: 55,
+      trend: 76,
+      relatedKeywords: ["market crash", "index fund", "investing tips"],
+      monthlySearches: [
+        8700, 9100, 9500, 10000, 10500, 11200, 11800, 12500, 13200, 14000, 14900, 15700,
+      ],
+      cpc: 4.1,
+    },
+    {
+      keyword: "beginner crypto staking",
+      searchVolume: 26000,
+      competition: 52,
+      trend: 83,
+      relatedKeywords: ["passive crypto", "defi yield", "staking guide"],
+      monthlySearches: [
+        7200, 7600, 8100, 8600, 9100, 9700, 10300, 11000, 11800, 12500, 13300, 14100,
+      ],
+      cpc: 2.9,
+    },
+  ],
+  health: [
+    {
+      keyword: "functional fitness routine",
+      searchVolume: 29000,
+      competition: 46,
+      trend: 84,
+      relatedKeywords: ["mobility training", "core stability", "daily movement"],
+      monthlySearches: [
+        8300, 8700, 9200, 9800, 10400, 11100, 11800, 12500, 13300, 14100, 14900, 15700,
+      ],
+      cpc: 1.7,
+    },
+    {
+      keyword: "gut health nutrition plan",
+      searchVolume: 27000,
+      competition: 48,
+      trend: 79,
+      relatedKeywords: ["microbiome diet", "anti inflammatory", "probiotic foods"],
+      monthlySearches: [
+        7800, 8200, 8600, 9100, 9600, 10100, 10700, 11300, 12000, 12700, 13400, 14100,
+      ],
+      cpc: 2.1,
+    },
+    {
+      keyword: "cold plunge benefits",
+      searchVolume: 32000,
+      competition: 51,
+      trend: 88,
+      relatedKeywords: ["ice bath", "contrast therapy", "recovery tips"],
+      monthlySearches: [
+        9000, 9600, 10100, 10800, 11500, 12300, 13100, 13900, 14800, 15700, 16600, 17500,
+      ],
+      cpc: 2.4,
+    },
+  ],
+  education: [
+    {
+      keyword: "ai study assistant",
+      searchVolume: 24000,
+      competition: 43,
+      trend: 82,
+      relatedKeywords: ["study workflow", "note taking app", "learning automation"],
+      monthlySearches: [
+        7100, 7500, 7900, 8400, 8900, 9500, 10100, 10800, 11500, 12300, 13100, 13900,
+      ],
+      cpc: 1.9,
+    },
+    {
+      keyword: "college productivity system",
+      searchVolume: 22000,
+      competition: 47,
+      trend: 74,
+      relatedKeywords: ["study planner", "semester planning", "student workflow"],
+      monthlySearches: [
+        6600, 7000, 7400, 7900, 8300, 8800, 9400, 9900, 10600, 11300, 12000, 12800,
+      ],
+      cpc: 1.5,
+    },
+    {
+      keyword: "language learning immersion",
+      searchVolume: 26000,
+      competition: 45,
+      trend: 78,
+      relatedKeywords: ["learn spanish fast", "language apps", "daily immersion"],
+      monthlySearches: [
+        7800, 8200, 8700, 9200, 9800, 10300, 10900, 11500, 12200, 12900, 13600, 14300,
+      ],
+      cpc: 1.8,
+    },
+  ],
+  gaming: [
+    {
+      keyword: "speedrun practice tips",
+      searchVolume: 30000,
+      competition: 53,
+      trend: 86,
+      relatedKeywords: ["speedrun route", "pb strategies", "glitch tutorial"],
+      monthlySearches: [
+        9200, 9600, 10100, 10700, 11400, 12100, 12800, 13600, 14400, 15200, 16100, 17000,
+      ],
+      cpc: 1.2,
+    },
+    {
+      keyword: "cozy game recommendations",
+      searchVolume: 27000,
+      competition: 50,
+      trend: 79,
+      relatedKeywords: ["indie games", "switch cozy", "relaxing gameplay"],
+      monthlySearches: [
+        7600, 8000, 8500, 9000, 9500, 10100, 10800, 11400, 12100, 12800, 13500, 14200,
+      ],
+      cpc: 1.0,
+    },
+    {
+      keyword: "esports training routine",
+      searchVolume: 25000,
+      competition: 56,
+      trend: 83,
+      relatedKeywords: ["aim training", "team scrims", "game sense"],
+      monthlySearches: [
+        7000, 7400, 7900, 8400, 8900, 9500, 10100, 10800, 11500, 12300, 13100, 13900,
+      ],
+      cpc: 1.6,
+    },
+  ],
+  entertainment: [
+    {
+      keyword: "streaming show breakdown",
+      searchVolume: 28000,
+      competition: 54,
+      trend: 77,
+      relatedKeywords: ["episode recap", "fan theories", "series analysis"],
+      monthlySearches: [
+        8100, 8500, 9000, 9500, 10100, 10700, 11300, 12000, 12700, 13400, 14200, 14900,
+      ],
+      cpc: 1.3,
+    },
+    {
+      keyword: "viral meme history",
+      searchVolume: 26000,
+      competition: 48,
+      trend: 85,
+      relatedKeywords: ["internet lore", "trend explained", "pop culture"],
+      monthlySearches: [
+        7800, 8200, 8700, 9300, 9900, 10500, 11200, 11900, 12600, 13400, 14200, 15000,
+      ],
+      cpc: 0.9,
+    },
+    {
+      keyword: "cinematic vlog tips",
+      searchVolume: 24000,
+      competition: 52,
+      trend: 80,
+      relatedKeywords: ["film transitions", "story driven vlog", "b roll"],
+      monthlySearches: [
+        7100, 7500, 8000, 8500, 9100, 9700, 10300, 10900, 11600, 12300, 13100, 13900,
+      ],
+      cpc: 1.4,
+    },
+  ],
+  news: [
+    {
+      keyword: "global tech regulation",
+      searchVolume: 23000,
+      competition: 58,
+      trend: 72,
+      relatedKeywords: ["ai policy", "privacy law", "digital rights"],
+      monthlySearches: [
+        6700, 7100, 7600, 8100, 8700, 9300, 9900, 10600, 11300, 12100, 12900, 13700,
+      ],
+      cpc: 2.2,
+    },
+    {
+      keyword: "economic outlook update",
+      searchVolume: 25000,
+      competition: 61,
+      trend: 75,
+      relatedKeywords: ["market forecast", "inflation report", "jobs data"],
+      monthlySearches: [
+        7200, 7600, 8100, 8600, 9200, 9800, 10500, 11200, 11900, 12700, 13500, 14300,
+      ],
+      cpc: 3.1,
+    },
+    {
+      keyword: "climate policy briefing",
+      searchVolume: 21000,
+      competition: 55,
+      trend: 78,
+      relatedKeywords: ["emissions report", "renewable targets", "global summit"],
+      monthlySearches: [
+        6300, 6700, 7100, 7600, 8100, 8700, 9300, 9900, 10500, 11200, 11900, 12600,
+      ],
+      cpc: 1.8,
+    },
+  ],
+  sports: [
+    {
+      keyword: "athlete recovery routine",
+      searchVolume: 27000,
+      competition: 50,
+      trend: 84,
+      relatedKeywords: ["mobility drills", "cryotherapy", "game day prep"],
+      monthlySearches: [
+        7800, 8200, 8700, 9300, 9900, 10500, 11200, 11900, 12700, 13500, 14300, 15100,
+      ],
+      cpc: 1.6,
+    },
+    {
+      keyword: "basketball analytics breakdown",
+      searchVolume: 24000,
+      competition: 53,
+      trend: 79,
+      relatedKeywords: ["advanced stats", "shot chart", "pace and space"],
+      monthlySearches: [
+        7000, 7400, 7900, 8400, 8900, 9500, 10100, 10800, 11500, 12300, 13100, 13900,
+      ],
+      cpc: 1.3,
+    },
+    {
+      keyword: "endurance training plan",
+      searchVolume: 30000,
+      competition: 47,
+      trend: 82,
+      relatedKeywords: ["marathon prep", "zone 2", "aerobic base"],
+      monthlySearches: [
+        8700, 9100, 9600, 10200, 10800, 11500, 12200, 12900, 13700, 14500, 15300, 16100,
+      ],
+      cpc: 1.9,
+    },
+  ],
+  travel: [
+    {
+      keyword: "digital nomad visa guide",
+      searchVolume: 26000,
+      competition: 45,
+      trend: 83,
+      relatedKeywords: ["remote work travel", "visa requirements", "global mobility"],
+      monthlySearches: [
+        7600, 8000, 8500, 9000, 9600, 10200, 10800, 11500, 12200, 12900, 13700, 14500,
+      ],
+      cpc: 2.3,
+    },
+    {
+      keyword: "slow travel itineraries",
+      searchVolume: 23000,
+      competition: 42,
+      trend: 78,
+      relatedKeywords: ["local experiences", "sustainable travel", "extended stay"],
+      monthlySearches: [
+        6900, 7300, 7800, 8300, 8800, 9300, 9900, 10500, 11100, 11800, 12500, 13200,
+      ],
+      cpc: 1.6,
+    },
+    {
+      keyword: "carry on packing system",
+      searchVolume: 24000,
+      competition: 48,
+      trend: 85,
+      relatedKeywords: ["minimal travel", "packing cubes", "travel hacks"],
+      monthlySearches: [
+        7200, 7600, 8100, 8600, 9200, 9800, 10400, 11000, 11700, 12400, 13100, 13800,
+      ],
+      cpc: 1.4,
+    },
+  ],
+  food: [
+    {
+      keyword: "high protein meal prep",
+      searchVolume: 32000,
+      competition: 57,
+      trend: 88,
+      relatedKeywords: ["macro friendly", "weekly prep", "meal planning"],
+      monthlySearches: [
+        9200, 9700, 10200, 10800, 11400, 12100, 12800, 13500, 14300, 15100, 16000, 16800,
+      ],
+      cpc: 1.8,
+    },
+    {
+      keyword: "air fryer global recipes",
+      searchVolume: 28000,
+      competition: 53,
+      trend: 82,
+      relatedKeywords: ["fusion cooking", "quick dinners", "crispy recipes"],
+      monthlySearches: [
+        8100, 8500, 9000, 9600, 10100, 10700, 11300, 12000, 12700, 13400, 14200, 14900,
+      ],
+      cpc: 1.5,
+    },
+    {
+      keyword: "budget gourmet hacks",
+      searchVolume: 25000,
+      competition: 46,
+      trend: 79,
+      relatedKeywords: ["cheap eats", "fine dining at home", "flavor boosters"],
+      monthlySearches: [
+        7600, 8000, 8500, 9000, 9500, 10100, 10700, 11300, 12000, 12700, 13400, 14100,
+      ],
+      cpc: 1.2,
+    },
+  ],
+  music: [
+    {
+      keyword: "bedroom pop production",
+      searchVolume: 28000,
+      competition: 51,
+      trend: 84,
+      relatedKeywords: ["diy mixing", "indie vocals", "home studio"],
+      monthlySearches: [
+        8300, 8700, 9200, 9700, 10300, 10900, 11600, 12300, 13100, 13900, 14700, 15500,
+      ],
+      cpc: 1.6,
+    },
+    {
+      keyword: "ai remix techniques",
+      searchVolume: 26000,
+      competition: 55,
+      trend: 82,
+      relatedKeywords: ["stems mixing", "music ai", "remix workflow"],
+      monthlySearches: [
+        7800, 8200, 8700, 9200, 9700, 10300, 10900, 11600, 12300, 13100, 13900, 14700,
+      ],
+      cpc: 1.4,
+    },
+    {
+      keyword: "live looping performance",
+      searchVolume: 24000,
+      competition: 49,
+      trend: 79,
+      relatedKeywords: ["loop station", "improv set", "stage setup"],
+      monthlySearches: [
+        7200, 7600, 8100, 8600, 9100, 9700, 10300, 11000, 11700, 12400, 13100, 13800,
+      ],
+      cpc: 1.3,
+    },
+  ],
 }
 
 function getTrendingFallback(category: string): YouTubeKeywordData[] {
@@ -768,8 +1118,18 @@ function extractKeywordPhrases(text: string): string[] {
 function getYouTubeCategoryId(category: string): string {
   const mapping: Record<string, string> = {
     technology: "28",
-    business: "19",
+    business: "27",
     lifestyle: "26",
+    finance: "25",
+    health: "26",
+    education: "27",
+    gaming: "20",
+    entertainment: "24",
+    news: "25",
+    sports: "17",
+    travel: "19",
+    food: "26",
+    music: "10",
   }
 
   return mapping[category] ?? mapping.technology
