@@ -1,6 +1,7 @@
 import type {
   CompetitorAnalysisRequest,
   CompetitorAnalysisResponse,
+  DailyVideoIdea,
   User,
   Video,
 } from "@/lib/types"
@@ -25,6 +26,7 @@ const API_ENDPOINTS = {
   channelProfile: "/api/channel-profile",
   channelVideos: "/api/channel-videos",
   competitorAnalysis: "/api/competitor-analysis",
+  dailyIdeas: "/api/daily-ideas",
 } as const
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -112,6 +114,39 @@ export async function fetchCompetitorAnalysis(
   })
 
   return handleResponse<CompetitorAnalysisResponse>(response)
+}
+
+export async function fetchDailyVideoIdeas(params: {
+  niche: string
+  engagement: "low" | "medium" | "high"
+  channelId?: string
+  channelName?: string
+  subscribers?: number
+  averageViews?: number
+}): Promise<DailyVideoIdea[]> {
+  const searchParams = new URLSearchParams({ niche: params.niche, engagement: params.engagement })
+
+  if (params.channelId) {
+    searchParams.set("channelId", params.channelId)
+  }
+  if (params.channelName) {
+    searchParams.set("channelName", params.channelName)
+  }
+  if (typeof params.subscribers === "number") {
+    searchParams.set("subscribers", String(params.subscribers))
+  }
+  if (typeof params.averageViews === "number" && !Number.isNaN(params.averageViews)) {
+    searchParams.set("averageViews", String(Math.max(0, Math.round(params.averageViews))))
+  }
+
+  const response = await fetch(`${API_ENDPOINTS.dailyIdeas}?${searchParams.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  })
+
+  const payload = await handleResponse<{ ideas: DailyVideoIdea[] }>(response)
+  return payload.ideas
 }
 
 export function calculateDifficulty(competition: number, volume: number): "Easy" | "Medium" | "Hard" {

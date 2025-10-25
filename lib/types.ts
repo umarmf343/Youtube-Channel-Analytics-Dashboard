@@ -25,6 +25,23 @@ export interface Video {
   thumbnail: string
 }
 
+export interface DailyVideoIdea {
+  id: string
+  title: string
+  hook: string
+  summary: string
+  tags: string[]
+  format: "Long-form" | "Shorts" | "Live" | "Series"
+  trendType: "Evergreen" | "Breakout" | "Seasonal"
+  recommendedLength: string
+  opportunityScore: number
+  audienceMatch: number
+  predictedViews: number
+  engagementAngle: string
+  callToAction: string
+  reason: string
+}
+
 export interface CompetitorVideoSummary {
   id: string
   title: string

@@ -14,6 +14,7 @@ const menuItems = [
   { id: "keywords", label: "Keyword Research", icon: "🔍" },
   { id: "competitors", label: "Competitors", icon: "🎯" },
   { id: "analytics", label: "Channel Analytics", icon: "📈" },
+  { id: "daily-ideas", label: "Daily Ideas", icon: "💡" },
   { id: "trending", label: "Trending", icon: "🔥" },
 ]
 

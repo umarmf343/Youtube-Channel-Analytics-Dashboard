@@ -45,6 +45,7 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - **Best Time to Post Scheduler**: AI-powered upload time recommendations
 - **Controversial Keywords Checker**: Identify keywords that trigger demonetization
 - **Optimization Reports**: Detailed recommendations for each video
+- **AI Daily Video Ideas**: Channel-aware prompts blending niche, engagement, and channel size with hooks, CTAs, and predicted performance
 
 ### 6. Advanced Features
 - **Channel Health Score**: Overall channel performance assessment
@@ -69,6 +70,12 @@ VidIStream is a comprehensive YouTube analytics and optimization platform that r
 - 7-day performance charts
 - Top performing videos list
 - Quick action buttons
+
+### Daily Ideas
+- AI-personalized prompts tuned to the channel's niche and recent engagement signal
+- Adjustable niche and engagement selectors to regenerate recommendations in real time
+- Opportunity, audience match, and predicted view scoring for prioritization
+- Detailed hooks, engagement angles, CTAs, and tag bundles ready for scripting
 
 ### Keyword Tools
 - Real-time keyword search with YouTube API
